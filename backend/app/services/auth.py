@@ -1,21 +1,26 @@
-from datetime import datetime, timedelta, UTC
+from fastapi import HTTPException, status
 
-from jose import jwt
-
-SECRET_KEY = "CHANGE_ME_IN_ENV"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+from app.models.roles import UserRole
+from app.models.user import User
 
 
 class AuthService:
+    @staticmethod
+    def require_role(
+        user: User,
+        role: UserRole,
+    ) -> User:
+        if user.role != role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+
+        return user
 
     @staticmethod
-    def create_access_token(user_id: int) -> str:
-        expire = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-        payload = {
-            "sub": str(user_id),
-            "exp": expire,
-        }
-
-        return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    def require_admin(user: User) -> User:
+        return AuthService.require_role(
+            user,
+            UserRole.ADMIN,
+        )

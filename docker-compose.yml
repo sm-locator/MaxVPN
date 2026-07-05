@@ -20,8 +20,13 @@ services:
 
     build:
       context: ./backend
+      args:
+        UID: ${APP_UID}
+        GID: ${APP_GID}
 
     container_name: maxvpn-backend
+
+
 
     restart: unless-stopped
 
