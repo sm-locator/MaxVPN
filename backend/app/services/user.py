@@ -28,3 +28,14 @@ class UserService:
         )
 
         return self.users.create(user)
+    
+    def authenticate(self, email: str, password: str) -> User:
+        user = self.users.get_by_email(email)
+
+        if not user:
+           raise ValueError("Invalid email or password")
+
+        if not PasswordService.verify_password(password, user.password_hash):
+           raise ValueError("Invalid email or password")
+
+        return user
