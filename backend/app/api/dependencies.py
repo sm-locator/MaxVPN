@@ -3,6 +3,7 @@ from ipaddress import IPv4Address, IPv4Network
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.database.dependencies import get_db
 from app.repositories.sqlalchemy.wireguard_client import (
     SQLAlchemyWireGuardClientRepository,
@@ -12,6 +13,7 @@ from app.vpn.repositories import WireGuardClientRepository
 from app.vpn.wireguard.config import WireGuardConfigGenerator
 from app.vpn.wireguard.keys import WireGuardKeyGenerator
 from app.vpn.wireguard.manager import WireGuardManager
+from app.vpn.wireguard.server_settings import WireGuardServerSettings
 from app.vpn.wireguard.settings import WireGuardSettings
 
 
@@ -21,6 +23,16 @@ def get_wireguard_settings() -> WireGuardSettings:
         reserved_addresses={
             IPv4Address("10.8.0.1"),
         },
+    )
+
+
+def get_wireguard_server_settings() -> WireGuardServerSettings:
+    return WireGuardServerSettings(
+        server_public_key=settings.WIREGUARD_SERVER_PUBLIC_KEY,
+        endpoint=settings.WIREGUARD_ENDPOINT,
+        dns=settings.WIREGUARD_DNS,
+        allowed_ips=settings.WIREGUARD_ALLOWED_IPS,
+        persistent_keepalive=settings.WIREGUARD_PERSISTENT_KEEPALIVE,
     )
 
 

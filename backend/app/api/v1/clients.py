@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Depends, status
 
-from app.api.dependencies import get_wireguard_manager
+from app.api.dependencies import (
+    get_wireguard_manager,
+    get_wireguard_server_settings,
+)
 from app.schemas.wireguard_client import ClientCreate, ClientRead
 from app.vpn.wireguard.manager import WireGuardManager
+from app.vpn.wireguard.server_settings import WireGuardServerSettings
 
 router = APIRouter(
     prefix="/clients",
@@ -18,14 +22,17 @@ router = APIRouter(
 def create_client(
     data: ClientCreate,
     manager: WireGuardManager = Depends(get_wireguard_manager),
+    server_settings: WireGuardServerSettings = Depends(
+        get_wireguard_server_settings,
+    ),
 ) -> ClientRead:
     client = manager.create_client(
         client_name=data.client_name,
-        dns="1.1.1.1",
-        server_public_key="server_public_key",
-        endpoint="vpn.example.com:51820",
-        allowed_ips="0.0.0.0/0",
-        persistent_keepalive=25,
+        dns=server_settings.dns,
+        endpoint=server_settings.endpoint,
+        server_public_key=server_settings.server_public_key,
+        allowed_ips=server_settings.allowed_ips,
+        persistent_keepalive=server_settings.persistent_keepalive,
     )
 
     return ClientRead.model_validate(client)

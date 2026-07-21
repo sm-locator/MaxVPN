@@ -8,7 +8,7 @@ from app.vpn.wireguard.manager import WireGuardManager
 from app.vpn.wireguard.settings import WireGuardSettings
 
 
-def test_create_client_config() -> None:
+def test_create_client() -> None:
     settings = WireGuardSettings(
         network=IPv4Network("10.8.0.0/24"),
     )
@@ -39,7 +39,7 @@ def test_create_client_config() -> None:
         config_generator=config_generator,
     )
 
-    result_keys, result_config = manager.create_client_config(
+    result = manager.create_client(
         client_name="phone",
         dns="1.1.1.1",
         server_public_key="server_public_key",
@@ -48,15 +48,17 @@ def test_create_client_config() -> None:
         persistent_keepalive=25,
     )
 
-    assert result_keys == keys
-
-    assert result_config == "[Interface]\nPrivateKey = private_key"
+    assert result.name == "phone"
+    assert result.ip_address == IPv4Address("10.8.0.2")
+    assert result.public_key == "public_key"
+    assert result.config == "[Interface]\nPrivateKey = private_key"
 
     repository.get_used_addresses.assert_called_once()
 
     allocator.allocate.assert_called_once_with(
         network=IPv4Network("10.8.0.0/24"),
         used_addresses=set(),
+        reserved_addresses=set(),
     )
 
     key_generator.generate.assert_called_once()
