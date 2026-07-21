@@ -5,6 +5,7 @@ from app.vpn.ip_allocator import IPAllocator
 from app.vpn.models import WireGuardClientConfig
 from app.vpn.wireguard.keys import WireGuardKeyPair
 from app.vpn.wireguard.manager import WireGuardManager
+from app.vpn.wireguard.server_settings import WireGuardServerSettings
 from app.vpn.wireguard.settings import WireGuardSettings
 
 
@@ -21,6 +22,14 @@ def test_create_client() -> None:
     keys = WireGuardKeyPair(
         private_key="private_key",
         public_key="public_key",
+    )
+
+    server = WireGuardServerSettings(
+        server_public_key="server_public_key",
+        endpoint="vpn.example.com:51820",
+        dns="1.1.1.1",
+        allowed_ips="0.0.0.0/0",
+        persistent_keepalive=25,
     )
 
     repository.get_used_addresses.return_value = set()
@@ -41,11 +50,7 @@ def test_create_client() -> None:
 
     result = manager.create_client(
         client_name="phone",
-        dns="1.1.1.1",
-        server_public_key="server_public_key",
-        endpoint="vpn.example.com:51820",
-        allowed_ips="0.0.0.0/0",
-        persistent_keepalive=25,
+        server=server,
     )
 
     assert result.name == "phone"

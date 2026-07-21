@@ -7,6 +7,7 @@ from app.api.dependencies import get_wireguard_manager
 from app.main import app
 from app.vpn.wireguard.client import CreatedWireGuardClient
 from app.vpn.wireguard.manager import WireGuardManager
+from app.vpn.wireguard.server_settings import WireGuardServerSettings
 
 client = TestClient(app)
 
@@ -42,11 +43,13 @@ def test_create_client_returns_201():
 
         manager.create_client.assert_called_once_with(
             client_name="phone",
-            dns="1.1.1.1",
-            server_public_key="server_public_key",
-            endpoint="vpn.example.com:51820",
-            allowed_ips="0.0.0.0/0",
-            persistent_keepalive=25,
+            server=WireGuardServerSettings(
+                server_public_key="server_public_key",
+                endpoint="vpn.example.com:51820",
+                dns="1.1.1.1",
+                allowed_ips="0.0.0.0/0",
+                persistent_keepalive=25,
+            ),
         )
 
     finally:

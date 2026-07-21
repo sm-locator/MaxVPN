@@ -28,11 +28,7 @@ def create_client(
 ) -> ClientRead:
     client = manager.create_client(
         client_name=data.client_name,
-        dns=server_settings.dns,
-        endpoint=server_settings.endpoint,
-        server_public_key=server_settings.server_public_key,
-        allowed_ips=server_settings.allowed_ips,
-        persistent_keepalive=server_settings.persistent_keepalive,
+        server=server_settings,
     )
 
     return ClientRead.model_validate(client)

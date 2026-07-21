@@ -11,6 +11,7 @@ from app.vpn.wireguard.config import WireGuardConfigGenerator
 from app.vpn.wireguard.keys import (
     WireGuardKeyGenerator,
 )
+from app.vpn.wireguard.server_settings import WireGuardServerSettings
 from app.vpn.wireguard.settings import WireGuardSettings
 
 
@@ -33,13 +34,8 @@ class WireGuardManager:
 
     def create_client(
         self,
-        *,
         client_name: str,
-        dns: str,
-        server_public_key: str,
-        endpoint: str,
-        allowed_ips: str,
-        persistent_keepalive: int,
+        server: WireGuardServerSettings,
     ) -> CreatedWireGuardClient:
         """Generate a WireGuard key pair and client configuration."""
 
@@ -64,11 +60,11 @@ class WireGuardManager:
         config = WireGuardClientConfig(
             private_key=keys.private_key,
             client_ip=f"{client_ip}/32",
-            dns=dns,
-            server_public_key=server_public_key,
-            endpoint=endpoint,
-            allowed_ips=allowed_ips,
-            persistent_keepalive=persistent_keepalive,
+            dns=server.dns,
+            server_public_key=server.server_public_key,
+            endpoint=server.endpoint,
+            allowed_ips=server.allowed_ips,
+            persistent_keepalive=server.persistent_keepalive,
         )
 
         client_config = self._config_generator.generate(config)

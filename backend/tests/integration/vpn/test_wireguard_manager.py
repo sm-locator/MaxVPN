@@ -16,6 +16,7 @@ from app.vpn.ip_allocator import (
 )
 from app.vpn.wireguard.keys import WireGuardKeyPair
 from app.vpn.wireguard.manager import WireGuardManager
+from app.vpn.wireguard.server_settings import WireGuardServerSettings
 from app.vpn.wireguard.settings import WireGuardSettings
 
 
@@ -50,6 +51,14 @@ def test_create_two_clients_get_different_addresses(db_session):
         "config2",
     ]
 
+    server = WireGuardServerSettings(
+        server_public_key="server_public_key",
+        endpoint="vpn.example.com:51820",
+        dns="1.1.1.1",
+        allowed_ips="0.0.0.0/0",
+        persistent_keepalive=25,
+    )
+
     manager = WireGuardManager(
         settings=settings,
         repository=repository,
@@ -61,11 +70,7 @@ def test_create_two_clients_get_different_addresses(db_session):
     # Первый клиент
     manager.create_client(
         client_name="phone",
-        dns="1.1.1.1",
-        server_public_key="server_public_key",
-        endpoint="vpn.example.com:51820",
-        allowed_ips="0.0.0.0/0",
-        persistent_keepalive=25,
+        server=server,
     )
 
     # Делаем запись видимой для следующего вызова
@@ -74,11 +79,7 @@ def test_create_two_clients_get_different_addresses(db_session):
     # Второй клиент
     manager.create_client(
         client_name="laptop",
-        dns="1.1.1.1",
-        server_public_key="server_public_key",
-        endpoint="vpn.example.com:51820",
-        allowed_ips="0.0.0.0/0",
-        persistent_keepalive=25,
+        server=server,
     )
 
     db_session.flush()
@@ -133,6 +134,14 @@ def test_create_client_when_network_is_full_raises_error(db_session):
         "config2",
     ]
 
+    server = WireGuardServerSettings(
+        server_public_key="server_public_key",
+        endpoint="vpn.example.com:51820",
+        dns="1.1.1.1",
+        allowed_ips="0.0.0.0/0",
+        persistent_keepalive=25,
+    )
+
     manager = WireGuardManager(
         settings=settings,
         repository=repository,
@@ -144,11 +153,7 @@ def test_create_client_when_network_is_full_raises_error(db_session):
     # Единственный доступный IP: 10.8.0.2
     manager.create_client(
         client_name="phone",
-        dns="1.1.1.1",
-        server_public_key="server_public_key",
-        endpoint="vpn.example.com:51820",
-        allowed_ips="0.0.0.0/0",
-        persistent_keepalive=25,
+        server=server,
     )
 
     # Делаем запись видимой для следующего запроса
@@ -158,11 +163,7 @@ def test_create_client_when_network_is_full_raises_error(db_session):
     with pytest.raises(NoAvailableIPAddressError):
         manager.create_client(
             client_name="laptop",
-            dns="1.1.1.1",
-            server_public_key="server_public_key",
-            endpoint="vpn.example.com:51820",
-            allowed_ips="0.0.0.0/0",
-            persistent_keepalive=25,
+            server=server,
         )
 
     clients = db_session.execute(select(ORMWireGuardClient)).scalars().all()
