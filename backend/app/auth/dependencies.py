@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
 from app.database.dependencies import get_db
+from app.models.roles import UserRole
 from app.models.user import User
 from app.repositories.user import UserRepository
-from app.services.auth import AuthService
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login",
@@ -46,7 +46,16 @@ def get_current_user(
         )
 
 
-def get_current_admin(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    return AuthService.require_admin(current_user)
+def require_role(role: UserRole):
+    def dependency(
+        current_user: User = Depends(get_current_user),
+    ) -> User:
+        if current_user.role != role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions",
+            )
+
+        return current_user
+
+    return dependency
