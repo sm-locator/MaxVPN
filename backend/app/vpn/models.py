@@ -18,5 +18,19 @@ class WireGuardClientConfig:
 @dataclass(slots=True)
 class WireGuardClient:
     name: str
+    private_key: str
     public_key: str
     ip_address: IPv4Address
+
+    description: str | None = None
+    enabled: bool = True
+
+    def update(
+        self,
+        name: str,
+        description: str | None,
+        enabled: bool,
+    ) -> None:
+        self.name = name
+        self.description = description
+        self.enabled = enabled

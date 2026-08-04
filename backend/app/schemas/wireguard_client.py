@@ -14,3 +14,19 @@ class ClientRead(BaseModel):
     ip_address: IPv4Address
     public_key: str
     config: str
+
+
+class ClientListItem(BaseModel):
+    name: str
+    ip_address: IPv4Address
+    public_key: str
+    description: str | None = None
+    enabled: bool = True
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ClientUpdate(BaseModel):
+    name: str
+    description: str | None = None
+    enabled: bool = True

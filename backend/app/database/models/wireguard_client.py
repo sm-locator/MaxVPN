@@ -16,6 +16,12 @@ class WireGuardClient(Base):
         nullable=False,
     )
 
+    private_key: Mapped[str] = mapped_column(
+        String(44),
+        unique=True,
+        nullable=False,
+    )
+
     public_key: Mapped[str] = mapped_column(
         String(44),
         unique=True,

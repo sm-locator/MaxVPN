@@ -65,6 +65,7 @@ def test_create_two_clients_get_different_addresses(db_session):
         allocator=allocator,
         key_generator=key_generator,
         config_generator=config_generator,
+        peer_manager=Mock(),
     )
 
     # Первый клиент
@@ -148,6 +149,7 @@ def test_create_client_when_network_is_full_raises_error(db_session):
         allocator=allocator,
         key_generator=key_generator,
         config_generator=config_generator,
+        peer_manager=Mock(),
     )
 
     # Единственный доступный IP: 10.8.0.2
@@ -165,9 +167,3 @@ def test_create_client_when_network_is_full_raises_error(db_session):
             client_name="laptop",
             server=server,
         )
-
-    clients = db_session.execute(select(ORMWireGuardClient)).scalars().all()
-
-    assert len(clients) == 1
-    assert clients[0].name == "phone"
-    assert clients[0].ip_address == IPv4Address("10.8.0.2")

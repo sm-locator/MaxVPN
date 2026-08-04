@@ -5,6 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.database.dependencies import get_db
+from app.exporters.config_exporter import ConfigExporter
+from app.exporters.export_facade import ExportFacade
+from app.exporters.qr_exporter import QRExporter
+from app.infrastructure.local_command_executor import LocalCommandExecutor
+from app.infrastructure.wireguard.peer_manager import SystemWireGuardPeerManager
 from app.repositories.sqlalchemy.wireguard_client import (
     SQLAlchemyWireGuardClientRepository,
 )
@@ -52,4 +57,23 @@ def get_wireguard_manager(
         allocator=IPAllocator(),
         key_generator=WireGuardKeyGenerator(),
         config_generator=WireGuardConfigGenerator(),
+        peer_manager=SystemWireGuardPeerManager(
+            executor=LocalCommandExecutor(),
+            interface_name="wg0",
+        ),
+    )
+
+
+def get_config_exporter() -> ConfigExporter:
+    return ConfigExporter()
+
+
+def get_qr_exporter() -> QRExporter:
+    return QRExporter()
+
+
+def get_export_facade() -> ExportFacade:
+    return ExportFacade(
+        config_exporter=get_config_exporter(),
+        qr_exporter=get_qr_exporter(),
     )

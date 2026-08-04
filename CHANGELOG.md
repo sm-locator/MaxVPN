@@ -14,3 +14,24 @@
 ### Changed
 
 - Replaced is_admin flag with role field.
+
+# Changelog
+
+## v0.2.0 - Export subsystem completed
+
+### Added
+
+- Download WireGuard client configuration (.conf)
+- QR code export for WireGuard clients
+- ExportFacade
+- ConfigExporter
+- QRExporter
+
+### Changed
+
+- Export subsystem refactored into dedicated exporters
+- Exporters are resolved through dependency injection
+
+### Tests
+
+- 50 passing tests
