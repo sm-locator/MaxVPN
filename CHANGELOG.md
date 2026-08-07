@@ -35,3 +35,39 @@
 ### Tests
 
 - 50 passing tests
+
+# Changelog
+
+## v0.3.0 — Policy Engine Foundation
+
+### Added
+
+- PolicyEngine pipeline
+- PolicyRegistry
+- PolicyContext
+- PolicyResult
+- PolicyCode
+
+### Domain Models
+
+- User
+- Subscription
+- Device
+- Server
+
+### Policies
+
+- SubscriptionPolicy
+- DevicePolicy
+
+### Tests
+
+- Shared test factories
+- PolicyResult tests
+- Engine tests
+- SubscriptionPolicy tests
+- DevicePolicy tests
+
+### Statistics
+
+- 23 passing tests
