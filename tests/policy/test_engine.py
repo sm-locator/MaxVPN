@@ -6,6 +6,7 @@ from backend.policy.engine import PolicyEngine
 from backend.policy.result import PolicyResult
 
 from tests.factories import make_device, make_user
+from tests.factories import make_server
 
 
 class DenyPolicy(Policy):
@@ -43,10 +44,8 @@ def test_default_policy_pipeline_allows_request():
 
     context = PolicyContext(
         user=make_user(),
-        device=make_device(
-            active=True,
-            trusted=True,
-        ),
+        device=make_device(),
+        server=make_server(),
     )
 
     result = engine.execute(context)

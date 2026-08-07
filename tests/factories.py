@@ -7,6 +7,7 @@ from backend.models.user import User
 from backend.models.device import Device
 from backend.models.server import Server
 from backend.policy.context import PolicyContext
+from backend.models.server_metrics import ServerMetrics
 
 _DEFAULT = object()
 
@@ -56,7 +57,7 @@ def make_device(
     name: str = "Windows PC",
     fingerprint: str = "device-001",
     active: bool = True,
-    trusted: bool = False,
+    trusted: bool = True,
 ) -> Device:
     return Device(
         id=id,
@@ -75,7 +76,11 @@ def make_server(
     city: str = "Warsaw",
     online: bool = True,
     load: int = 0,
+    latency: int = 0,
+    max_load: int = 80,
     max_devices: int = 1000,
+    maintenance: bool = False,
+    metrics: ServerMetrics | None = None,
 ) -> Server:
     return Server(
         id=id,
@@ -84,7 +89,11 @@ def make_server(
         city=city,
         online=online,
         load=load,
+        latency=latency,
+        max_load=max_load,
         max_devices=max_devices,
+        maintenance=maintenance,
+        metrics=metrics,
     )
 
 

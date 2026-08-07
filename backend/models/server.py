@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from backend.models.server_metrics import ServerMetrics
+
 
 @dataclass(slots=True)
 class Server:
@@ -9,7 +11,14 @@ class Server:
     city: str
 
     online: bool = True
+    maintenance: bool = False
 
     load: int = 0
+    latency: int = 0
 
+    max_load: int = 80
     max_devices: int = 1000
+
+    maintenance: bool = False
+
+    metrics: ServerMetrics | None = None
