@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from backend.policy.context import PolicyContext
 from backend.policy.engine import PolicyEngine
-from backend.services.server_repository import ServerRepository
+from backend.ports.server_repository import ServerRepository
 from backend.services.server_selector import ServerSelector
 
 
@@ -24,7 +24,7 @@ class RoutingService:
     def select(self, context: PolicyContext):
         allowed = []
 
-        for server in self._repository.all():
+        for server in self._repository.get_available():
             context.server = server
 
             result = self._engine.execute(context)

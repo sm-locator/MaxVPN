@@ -3,13 +3,15 @@ from backend.application.use_cases.select_best_server import (
 )
 from backend.policy.registry import PolicyRegistry
 from backend.services.routing_service import RoutingService
-from backend.services.server_repository import ServerRepository
+from backend.services.in_memory_server_repository import (
+    InMemoryServerRepository,
+)
 from backend.services.server_selector import ServerSelector
 from tests.factories import make_context, make_server
 
 
 def test_use_case_returns_best_server():
-    repository = ServerRepository(
+    repository = InMemoryServerRepository(
         [
             make_server(id=1, load=60),
             make_server(id=2, load=20),

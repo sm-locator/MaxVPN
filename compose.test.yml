@@ -1,0 +1,58 @@
+x-test-runner: &test-runner
+  image: ${MAXVPN_TEST_IMAGE:?Run make test-docker}
+  pull_policy: never
+  working_dir: /workspace
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  volumes:
+    - type: bind
+      source: ${MAXVPN_TEST_SOURCE:?Run make test-docker}
+      target: /workspace
+      read_only: true
+  environment: &test-env
+    HOME: /tmp
+    PYTHONDONTWRITEBYTECODE: "1"
+    PYTHONPATH: /workspace:/workspace/backend:/workspace/appliance/maxvpn
+
+services:
+  database:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: maxvpn_test
+      POSTGRES_USER: maxvpn_test
+      POSTGRES_PASSWORD: ${MAXVPN_TEST_PASSWORD:?Run make test-docker}
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: [CMD, pg_isready, -h, 127.0.0.1, -U, maxvpn_test, -d, maxvpn_test]
+      interval: 1s
+      timeout: 2s
+      retries: 30
+    networks: [test-db]
+
+  backend-tests:
+    <<: *test-runner
+    build:
+      context: ${MAXVPN_TEST_SOURCE:?Run make test-docker}/backend
+    environment:
+      <<: *test-env
+      DATABASE_URL: &test-db-url postgresql+psycopg://maxvpn_test:${MAXVPN_TEST_PASSWORD:?Run make test-docker}@database:5432/maxvpn_test
+      ALEMBIC_DATABASE_URL: *test-db-url
+      TEST_DATABASE_URL: *test-db-url
+      POSTGRES_DB: maxvpn_test
+      SECRET_KEY: disposable-maxvpn-test-signing-key
+      SSH_PRIVATE_KEY_PATH: /nonexistent/test-key
+      WIREGUARD_SERVER_PUBLIC_KEY: "<публичный ключ сервера>"
+      WIREGUARD_ENDPOINT: "<домен или IP>:51820"
+    networks: [test-db]
+
+  appliance-tests:
+    <<: *test-runner
+    network_mode: none
+    command: [python, -m, pytest, -q, -p, "no:cacheprovider", appliance/maxvpn/tests]
+
+networks:
+  test-db:
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.gateway_mode_ipv4: isolated

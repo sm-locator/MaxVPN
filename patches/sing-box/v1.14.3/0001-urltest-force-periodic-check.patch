@@ -1,0 +1,13 @@
+diff --git a/protocol/group/urltest.go b/protocol/group/urltest.go
+index bc50ab7..01ba026 100644
+--- a/protocol/group/urltest.go
++++ b/protocol/group/urltest.go
+@@ -369,7 +369,7 @@ func (g *URLTestGroup) loopCheck(ticker *time.Ticker, closeChan <-chan struct{})
+ 			g.access.Unlock()
+ 			return
+ 		}
+-		g.CheckOutbounds(g.ctx, false)
++		g.CheckOutbounds(g.ctx, true)
+ 	}
+ }
+ 

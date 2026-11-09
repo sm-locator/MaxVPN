@@ -10,7 +10,6 @@ class SubscriptionPolicy(Policy):
     """Checks whether the user has a valid subscription."""
 
     def check(self, context: PolicyContext) -> PolicyResult:
-
         if not context.user.active:
             return PolicyResult.deny(
                 code=PolicyCode.USER_DISABLED,

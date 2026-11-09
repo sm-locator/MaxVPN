@@ -9,6 +9,11 @@ from backend.models.server import Server
 from backend.policy.context import PolicyContext
 from backend.models.server_metrics import ServerMetrics
 
+from backend.models.client_config import ClientConfig
+from backend.models.key_pair import KeyPair
+from backend.models.peer import Peer
+from backend.models.tunnel import Tunnel
+
 _DEFAULT = object()
 
 
@@ -74,6 +79,7 @@ def make_server(
     name: str = "Warsaw-01",
     country: str = "PL",
     city: str = "Warsaw",
+    endpoint: str = "1.2.3.4:51820",
     online: bool = True,
     load: int = 0,
     latency: int = 0,
@@ -87,6 +93,8 @@ def make_server(
         name=name,
         country=country,
         city=city,
+        endpoint=endpoint,
+        public_key="server-public-key",
         online=online,
         load=load,
         latency=latency,
@@ -119,4 +127,21 @@ def make_context(
         user=user,
         device=device,
         server=server,
+    )
+
+
+def make_client_config() -> ClientConfig:
+    return ClientConfig(
+        server=make_server(),
+        key_pair=KeyPair(
+            private_key="private-key",
+            public_key="public-key",
+        ),
+        tunnel=Tunnel(
+            address="10.100.0.2/32",
+        ),
+        peer=Peer(
+            public_key="server-public-key",
+            allowed_ips="0.0.0.0/0",
+        ),
     )

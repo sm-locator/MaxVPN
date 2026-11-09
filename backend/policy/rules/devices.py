@@ -10,7 +10,6 @@ class DevicePolicy(Policy):
     """Checks device restrictions."""
 
     def check(self, context: PolicyContext) -> PolicyResult:
-
         if context.device is None:
             return PolicyResult.deny(
                 code=PolicyCode.DEVICE_NOT_FOUND,

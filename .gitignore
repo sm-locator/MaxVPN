@@ -34,3 +34,10 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# SQLite
+*.db
+
+client.conf
+
+exports/

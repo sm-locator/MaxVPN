@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from backend.models.server import Server
 from backend.models.server_metrics import ServerMetrics
-from backend.services.metrics_repository import MetricsRepository
+from backend.ports.metrics_repository import MetricsRepository
 
 
 class MetricsService:

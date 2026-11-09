@@ -9,6 +9,8 @@ class Server:
     name: str
     country: str
     city: str
+    endpoint: str
+    public_key: str
 
     online: bool = True
     maintenance: bool = False
@@ -18,7 +20,5 @@ class Server:
 
     max_load: int = 80
     max_devices: int = 1000
-
-    maintenance: bool = False
 
     metrics: ServerMetrics | None = None

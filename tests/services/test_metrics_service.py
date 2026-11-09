@@ -1,5 +1,5 @@
 from backend.models.server_metrics import ServerMetrics
-from backend.services.metrics_repository import MetricsRepository
+from backend.services.in_memory_metrics_repository import InMemoryMetricsRepository
 from backend.services.metrics_service import MetricsService
 from tests.factories import make_server
 
@@ -11,7 +11,7 @@ def test_service_returns_metrics():
     )
 
     service = MetricsService(
-        MetricsRepository(),
+        InMemoryMetricsRepository(),
     )
 
     server = make_server(metrics=metrics)
@@ -21,7 +21,7 @@ def test_service_returns_metrics():
 
 def test_service_returns_none():
     service = MetricsService(
-        MetricsRepository(),
+        InMemoryMetricsRepository(),
     )
 
     server = make_server(metrics=None)

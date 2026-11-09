@@ -26,7 +26,6 @@ def test_delete_client() -> None:
 
 
 def test_delete_unknown_client_raises_error() -> None:
-
     deps = create_dependencies()
 
     deps.repository.get_by_name.return_value = None
