@@ -18,7 +18,7 @@ def test_render_on_uses_transition_guards_before_switching_runtime_mode() -> Non
     assert guard_install < mode_write < firewall_apply < wireguard_start
     assert wireguard_start < hotplug_apply < guard_remove
     assert "MAXVPN_MODE_TRANSITION_GUARD" in script
-    assert "MAXVPN6_MODE_TRANSITION_GUARD" in script
+    assert "MAXVPN6_MODE_GUARD" in script
     assert "MAXVPN_DIRECT_NAT" in script
     assert "WAN remains fail-closed" in script
 
@@ -75,7 +75,7 @@ def test_render_vless_on_is_fail_closed_and_verifies_tun() -> None:
     runtime_verify = script.index("grep -q '^vless$' \"$RUNTIME_MODE_FILE\"")
     assert guard_install < mode_write < runtime_verify < guard_remove
     assert "MAXVPN_MODE_TRANSITION_GUARD" in script
-    assert "MAXVPN6_MODE_TRANSITION_GUARD" in script
+    assert "MAXVPN6_MODE_GUARD" in script
 
     assert '"$SING_BOX" check -c "$SING_BOX_CONFIG"' in script
     assert "grep -q 'UP'" in script
@@ -283,7 +283,7 @@ exit 43
     assert runtime_mode.read_text().strip() == "vpn"
     assert "ifup WireGuard" in log
     assert "iptables -D forwarding_rule -j MAXVPN_MODE_TRANSITION_GUARD" not in log
-    assert "ip6tables -D forwarding_rule -j MAXVPN6_MODE_TRANSITION_GUARD" not in log
+    assert "ip6tables -D forwarding_rule -j MAXVPN6_MODE_GUARD" not in log
 
 
 def test_mode_helpers_share_one_reentrant_runtime_lock() -> None:
@@ -454,10 +454,10 @@ exit 0
                 "-A forwarding_rule -j MAXVPN_MODE_TRANSITION_GUARD\n"
             ),
             "ip6tables": (
-                "-N MAXVPN6_MODE_TRANSITION_GUARD\n"
-                "-A MAXVPN6_MODE_TRANSITION_GUARD -i br-lan -o eth1 -j DROP\n"
-                "-A forwarding_rule -j MAXVPN6_MODE_TRANSITION_GUARD\n"
-                "-A forwarding_rule -j MAXVPN6_MODE_TRANSITION_GUARD\n"
+                "-N MAXVPN6_MODE_GUARD\n"
+                "-A MAXVPN6_MODE_GUARD -i br-lan -o eth1 -j DROP\n"
+                "-A forwarding_rule -j MAXVPN6_MODE_GUARD\n"
+                "-A forwarding_rule -j MAXVPN6_MODE_GUARD\n"
             ),
         }
         for name, rules in duplicate_guard_rules.items():
@@ -605,13 +605,11 @@ def test_vless_rollback_dynamically_restores_wan_and_removes_duplicate_guards(
     v6 = (state_dir / "ip6tables.rules").read_text()
     assert "-N MAXVPN_MODE_TRANSITION_GUARD" not in v4
     assert "-j MAXVPN_MODE_TRANSITION_GUARD" not in v4
-    assert "-N MAXVPN6_MODE_TRANSITION_GUARD" not in v6
-    assert "-j MAXVPN6_MODE_TRANSITION_GUARD" not in v6
+    assert "-N MAXVPN6_MODE_GUARD" not in v6
+    assert "-j MAXVPN6_MODE_GUARD" not in v6
     log = log_path.read_text()
     assert log.count("iptables -D forwarding_rule -j MAXVPN_MODE_TRANSITION_GUARD") == 3
-    assert (
-        log.count("ip6tables -D forwarding_rule -j MAXVPN6_MODE_TRANSITION_GUARD") == 3
-    )
+    assert log.count("ip6tables -D forwarding_rule -j MAXVPN6_MODE_GUARD") == 3
     assert "-A MAXVPN_LAN_FORWARD -i br-lan -o eth1 -j ACCEPT" in v4
 
 
@@ -644,8 +642,8 @@ def test_vless_rollback_keeps_guards_when_previous_firewall_restore_fails(
     v6 = (state_dir / "ip6tables.rules").read_text()
     assert "-A forwarding_rule -j MAXVPN_MODE_TRANSITION_GUARD" in v4
     assert "-A MAXVPN_MODE_TRANSITION_GUARD -i br-lan -o eth1 -j DROP" in v4
-    assert "-A forwarding_rule -j MAXVPN6_MODE_TRANSITION_GUARD" in v6
-    assert "-A MAXVPN6_MODE_TRANSITION_GUARD -i br-lan -o eth1 -j DROP" in v6
+    assert "-A forwarding_rule -j MAXVPN6_MODE_GUARD" in v6
+    assert "-A MAXVPN6_MODE_GUARD -i br-lan -o eth1 -j DROP" in v6
 
 
 def test_vless_rollback_rejects_stale_wan_dns_rules_and_keeps_guards(tmp_path) -> None:
@@ -669,7 +667,7 @@ def test_vless_rollback_keeps_both_guards_when_policy_rule_inspection_fails(
     assert result.returncode == 1
     assert "rollback incomplete, transition guards retained" in result.stderr
     assert "-A forwarding_rule -j MAXVPN_MODE_TRANSITION_GUARD" in v4
-    assert "-A forwarding_rule -j MAXVPN6_MODE_TRANSITION_GUARD" in v6
+    assert "-A forwarding_rule -j MAXVPN6_MODE_GUARD" in v6
 
 
 def test_vless_rollback_keeps_guard_when_full_firewall_inspection_fails(
@@ -847,6 +845,7 @@ def _run_render_off_shell_case(
     rule_output="",
     route_output="",
     route_error="",
+    wg_inventory=None,
 ):
     import os
     import subprocess
@@ -870,7 +869,7 @@ def _run_render_off_shell_case(
 FAMILY=$(basename "$0")
 case "$FAMILY" in
     iptables) GUARD=MAXVPN_MODE_TRANSITION_GUARD ;;
-    ip6tables) GUARD=MAXVPN6_MODE_TRANSITION_GUARD ;;
+    ip6tables) GUARD=MAXVPN6_MODE_GUARD ;;
     *) exit 90 ;;
 esac
 STATE="$MAXVPN_TEST_STATE/$FAMILY"
@@ -997,6 +996,23 @@ exit 0
         }
     )
 
+    if wg_inventory is not None:
+        ifstatus.write_text("#!/bin/sh\nexit 1\n")
+        for command in ("uci", "ubus", "ip"):
+            output, status = wg_inventory.get(command, ("", 0))
+            inventory = tmp_path / f"{command}-inventory"
+            inventory.write_text(output)
+            stub = bin_dir / command
+            if command == "ip":
+                prefix = (
+                    '#!/bin/sh\nif [ "$*" = "-o link show" ]; then\n'
+                    f'cat "{inventory}"\nexit {status}\nfi\n'
+                )
+                stub.write_text(prefix + ip_stub.removeprefix("#!/bin/sh\n"))
+            else:
+                stub.write_text(f'#!/bin/sh\ncat "{inventory}"\nexit {status}\n')
+            stub.chmod(0o755)
+
     script = OpenWrtLanVpnCommandRenderer().render_off()
     script = (
         script.replace(
@@ -1043,7 +1059,7 @@ def test_render_off_keeps_transition_guards_when_firewall_apply_fails(
     assert (state_dir / "iptables" / "attached").exists()
     assert (state_dir / "ip6tables" / "attached").exists()
     assert "iptables -D forwarding_rule -j MAXVPN_MODE_TRANSITION_GUARD" not in log
-    assert "ip6tables -D forwarding_rule -j MAXVPN6_MODE_TRANSITION_GUARD" not in log
+    assert "ip6tables -D forwarding_rule -j MAXVPN6_MODE_GUARD" not in log
 
 
 def test_render_off_keeps_guards_when_wireguard_remains_up_after_ifdown(
@@ -1091,7 +1107,7 @@ def test_render_off_keeps_guards_when_stale_vpn_policy_remains(
     assert (state_dir / "iptables" / "attached").exists()
     assert (state_dir / "ip6tables" / "attached").exists()
     assert "iptables -D forwarding_rule -j MAXVPN_MODE_TRANSITION_GUARD" not in log
-    assert "ip6tables -D forwarding_rule -j MAXVPN6_MODE_TRANSITION_GUARD" not in log
+    assert "ip6tables -D forwarding_rule -j MAXVPN6_MODE_GUARD" not in log
 
 
 @pytest.mark.parametrize(
@@ -1220,3 +1236,52 @@ esac
     assert previous_mode.strip() == "vless"
     assert mode.read_text().strip() == "wan"
     assert (tmp_path / "disabled").is_file()
+
+
+@pytest.mark.parametrize(
+    "inventory",
+    [
+        {},
+        {
+            "uci": ("network.lan=interface\n", 0),
+            "ubus": ("network.interface.lan\n", 0),
+            "ip": ("1: lo: <UP>\n", 0),
+        },
+    ],
+)
+def test_wan_switch_accepts_verified_wireguard_absence(tmp_path, inventory):
+    result, mode, state, log = _run_render_off_shell_case(
+        tmp_path, wg_inventory=inventory
+    )
+    assert result.returncode == 0, result.stderr
+    assert mode.read_text().strip() == "wan"
+    assert "WireGuard absent" in result.stdout
+    assert "ifdown WireGuard" not in log
+    for family in ("iptables", "ip6tables"):
+        assert not (state / family / "attached").exists()
+
+
+@pytest.mark.parametrize(
+    "command,output,status",
+    [
+        ("uci", "network.WireGuard=interface\n", 0),
+        ("ubus", "network.interface.WireGuard\n", 0),
+        ("ip", "8: WireGuard: <UP>\n", 0),
+        ("ip", "8: WireGuard@eth1: <UP>\n", 0),
+        ("uci", "", 1),
+        ("ubus", "", 1),
+        ("ip", "", 1),
+    ],
+)
+def test_wan_switch_retains_guards_for_unknown_wireguard_state(
+    tmp_path, command, output, status
+):
+    result, _, state, log = _run_render_off_shell_case(
+        tmp_path, wg_inventory={command: (output, status)}
+    )
+    assert result.returncode != 0
+    assert "transition guards retained" in result.stderr
+    assert "VPN LAN: OFF" not in result.stdout
+    assert "ifdown WireGuard" not in log
+    for family in ("iptables", "ip6tables"):
+        assert (state / family / "attached").exists()

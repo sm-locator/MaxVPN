@@ -20,7 +20,7 @@ class OpenWrtLanVpnCommandRenderer:
     RULE_PRIORITY = 1000
     VLESS_INTERFACE = "maxvpn0"
     IPV4_TRANSITION_GUARD = "MAXVPN_MODE_TRANSITION_GUARD"
-    IPV6_TRANSITION_GUARD = "MAXVPN6_MODE_TRANSITION_GUARD"
+    IPV6_TRANSITION_GUARD = "MAXVPN6_MODE_GUARD"
 
     def _render_runtime_lock(self) -> str:
         return """RUNTIME_LOCK_FILE=/tmp/maxvpn-runtime.lock
@@ -836,8 +836,24 @@ ip route flush cache 2>/dev/null || true
 # Stop WireGuard while the transition guards still block WAN traffic.
 
 WG_STATUS="$(ifstatus WireGuard 2>/dev/null)" || {
-    echo "Unable to inspect WireGuard state; transition guards retained" >&2
-    exit 1
+    # Accept absence only after all three inventories were read successfully.
+    WG_CONFIG="$(uci show network)" &&
+    WG_OBJECTS="$(ubus list 'network.interface.*')" &&
+    WG_LINKS="$(ip -o link show)" || {
+        echo "Unable to inspect network inventory; transition guards retained" >&2
+        exit 1
+    }
+
+    if printf '%s\\n' "$WG_CONFIG" | grep -q '^network\\.WireGuard[.=]' ||
+       printf '%s\\n' "$WG_OBJECTS" | grep -qx 'network.interface.WireGuard' ||
+       printf '%s\\n' "$WG_LINKS" | grep -Eq '^[0-9]+: WireGuard(@[^:]+)?:'
+    then
+        echo "WireGuard exists but status is unavailable; transition guards retained" >&2
+        exit 1
+    fi
+
+    WG_STATUS='{"up": false}'
+    echo "WireGuard absent: shutdown not required"
 }
 
 if printf '%s\\n' "$WG_STATUS" | grep -q '"up": true'; then

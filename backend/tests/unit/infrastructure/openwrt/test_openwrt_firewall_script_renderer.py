@@ -191,7 +191,7 @@ def test_render_installs_ipv4_and_ipv6_update_guards_before_chain_flush() -> Non
     )
     ipv4_flush = script.index("iptables -F MAXVPN_LAN_FORWARD")
     ipv6_guard = script.index(
-        "ip6tables -I forwarding_rule 1 -j MAXVPN6_FIREWALL_UPDATE_GUARD"
+        "ip6tables -I forwarding_rule 1 -j MAXVPN6_FW_UPDATE_GUARD"
     )
     ipv6_flush = script.index("ip6tables -F MAXVPN_LAN6_FORWARD")
 
@@ -204,9 +204,7 @@ def test_render_removes_update_guards_only_after_direct_nat_and_ipv6_policy() ->
 
     nat_jump = script.index("iptables -t nat -I POSTROUTING 1 -j MAXVPN_DIRECT_NAT")
     ipv4_cleanup = script.index("remove_update_guard() {")
-    ipv6_cleanup = script.index(
-        "remove_update_guard ip6tables MAXVPN6_FIREWALL_UPDATE_GUARD"
-    )
+    ipv6_cleanup = script.index("remove_update_guard ip6tables MAXVPN6_FW_UPDATE_GUARD")
     ipv6_policy = script.index("ip6tables -A MAXVPN_LAN6_FORWARD -j RETURN")
 
     assert nat_jump < ipv4_cleanup
@@ -263,9 +261,9 @@ exit 0
 
     assert result.returncode == 47
     assert "iptables -I forwarding_rule 1 -j MAXVPN_FIREWALL_UPDATE_GUARD" in log
-    assert "ip6tables -I forwarding_rule 1 -j MAXVPN6_FIREWALL_UPDATE_GUARD" in log
+    assert "ip6tables -I forwarding_rule 1 -j MAXVPN6_FW_UPDATE_GUARD" in log
     assert "iptables -D forwarding_rule -j MAXVPN_FIREWALL_UPDATE_GUARD" not in log
-    assert "ip6tables -D forwarding_rule -j MAXVPN6_FIREWALL_UPDATE_GUARD" not in log
+    assert "ip6tables -D forwarding_rule -j MAXVPN6_FW_UPDATE_GUARD" not in log
 
 
 def test_render_firewall_script_uses_shared_reentrant_runtime_lock() -> None:
@@ -299,7 +297,7 @@ case "$1" in
         if [ "$#" -eq 2 ] && [ "$2" = "forwarding_rule" ]; then
             case "$name" in
                 iptables) guard=MAXVPN_MODE_TRANSITION_GUARD ;;
-                ip6tables) guard=MAXVPN6_MODE_TRANSITION_GUARD ;;
+                ip6tables) guard=MAXVPN6_MODE_GUARD ;;
             esac
             echo "-A forwarding_rule -j $guard"
         fi
@@ -339,14 +337,36 @@ esac
         in result.stderr
     )
     assert "iptables -I forwarding_rule 1 -j MAXVPN_FIREWALL_UPDATE_GUARD" in log
-    assert "ip6tables -I forwarding_rule 1 -j MAXVPN6_FIREWALL_UPDATE_GUARD" in log
+    assert "ip6tables -I forwarding_rule 1 -j MAXVPN6_FW_UPDATE_GUARD" in log
     assert "iptables -D forwarding_rule -j MAXVPN_FIREWALL_UPDATE_GUARD" not in log
-    assert "ip6tables -D forwarding_rule -j MAXVPN6_FIREWALL_UPDATE_GUARD" not in log
+    assert "ip6tables -D forwarding_rule -j MAXVPN6_FW_UPDATE_GUARD" not in log
 
     for binary, transition_guard, policy_chain in (
         ("iptables", "MAXVPN_MODE_TRANSITION_GUARD", "MAXVPN_LAN_FORWARD"),
-        ("ip6tables", "MAXVPN6_MODE_TRANSITION_GUARD", "MAXVPN_LAN6_FORWARD"),
+        ("ip6tables", "MAXVPN6_MODE_GUARD", "MAXVPN_LAN6_FORWARD"),
     ):
         guard_first = log.index(f"{binary} -I forwarding_rule 2 -j {transition_guard}")
         policy_next = log.index(f"{binary} -I forwarding_rule 3 -j {policy_chain}")
         assert guard_first < policy_next
+
+
+def test_all_rendered_chain_names_fit_legacy_xtables_limit():
+    import re
+
+    from backend.infrastructure.openwrt.openwrt_lan_vpn_command_renderer import (
+        OpenWrtLanVpnCommandRenderer,
+    )
+
+    commands = OpenWrtLanVpnCommandRenderer()
+    scripts = [
+        OpenWrtFirewallScriptRenderer().render(make_policy()),
+        commands.render_on(),
+        commands.render_off(),
+        commands.render_vless_on(),
+    ]
+    for script in scripts:
+        names = re.findall(r"\bMAXVPN[A-Z0-9_]*(?:GUARD|FORWARD|NAT)\b", script)
+        assert names
+        for name in names:
+            # XT_EXTENSION_MAXNAMELEN includes the terminating NUL.
+            assert len(name.encode("ascii")) <= 28, name
