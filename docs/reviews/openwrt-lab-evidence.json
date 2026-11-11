@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-11",
+  "environment": "OpenWrt 21.02.7 x86-64, Linux 5.4.238, sing-box 1.14.3",
+  "state_directory": "/tmp/maxvpn-pr2-lab-20261111b",
+  "capture_file": "wan-wire.pcap",
+  "capture_sha256": "d554a0da5417e8b719d332c8fe3d954572637b4a7ca8fcee84180bfbd8b7a730",
+  "appliance_server_sha256": "14c508167c17436c32a63f319823f8bed7d7ee4fe988a9d1c73707a45a9bafdd",
+  "capture_positive_control": "Real IPv4 HTTP and IPv6 ICMP were observed in WAN mode",
+  "windows": [
+    {"check": "reboot and recovery", "start_offset": 1352883, "end_offset": 1470522, "forbidden_packets": 0},
+    {"check": "firewall reload", "start_offset": 1476818, "end_offset": 1487724, "forbidden_packets": 0},
+    {"check": "tunnel down", "start_offset": 1563276, "end_offset": 1564738, "forbidden_packets": 0},
+    {"check": "tunnel loss and watchdog recovery", "start_offset": 1563276, "end_offset": 1655782, "forbidden_packets": 0}
+  ],
+  "traffic": "Continuous real IPv4 HTTP and IPv6 ICMP from a separate LAN VM; supported plain VLESS to a local peer; separate IPv4 DIRECT exception",
+  "not_verified": ["AmneziaWG", "REALITY", "external DNS/DoH", "external URLTest", "Brume 3 hardware and GL.iNet firmware", "complete established-connection transition matrix"]
+}
