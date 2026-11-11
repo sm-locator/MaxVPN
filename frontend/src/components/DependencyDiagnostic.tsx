@@ -45,14 +45,19 @@ export function DependencyDiagnostic({ onCommitted }: Props) {
 
 
   async function poll(token: string) {
-    const next = await pollDependencyDiagnostic(token)
-    setResult(next)
-    if (next.running) {
-      timer.current = window.setTimeout(() => void poll(token), 1000)
-    } else {
-      // Match the appliance UI: candidates require explicit user selection.
-      setSelected([])
+    try {
+      const next = await pollDependencyDiagnostic(token)
+      setResult(next)
+      if (next.running) {
+        timer.current = window.setTimeout(() => void poll(token), 1000)
+      } else {
+        // Match the appliance UI: candidates require explicit user selection.
+        setSelected([])
+        setBusy(false)
+      }
+    } catch (error) {
       setBusy(false)
+      setMessage(error instanceof Error ? error.message : 'Не удалось обновить диагностику. Запустите её снова.')
     }
   }
 

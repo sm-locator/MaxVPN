@@ -290,19 +290,27 @@ function App() {
   async function handleToggle(rule: SmartRoutingRule) {
     setError(null)
 
-    const updated = await updateRule(rule.id, {
-      enabled: !rule.enabled,
-    })
+    try {
+      const updated = await updateRule(rule.id, {
+        enabled: !rule.enabled,
+      })
 
-    setRules((current) =>
-      current.map((item) => (item.id === updated.id ? updated : item)),
-    )
+      setRules((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item)),
+      )
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось изменить правило.')
+    }
   }
 
   async function handleDelete(id: number) {
     setError(null)
-    await deleteRule(id)
-    setRules((current) => current.filter((rule) => rule.id !== id))
+    try {
+      await deleteRule(id)
+      setRules((current) => current.filter((rule) => rule.id !== id))
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Не удалось удалить правило.')
+    }
   }
 
   async function handleAddRussianDirectPreset(): Promise<RussianDirectPresetResponse> {
