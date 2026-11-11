@@ -50,6 +50,8 @@ else
 fi
 
 "${compose[@]}" up -d --wait --wait-timeout 60 database
+source "$root/scripts/verify_upgrade.sh"
+verify_upgrade
 status=0
 "${compose[@]}" run --rm -T --no-deps backend-tests bash -euc '
     (cd backend && python -m alembic upgrade head)
