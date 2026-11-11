@@ -180,6 +180,7 @@ def get_runtime(
     response_model=VpnRuntimeResponse,
 )
 def start_vpn(
+    current_user: User = Depends(get_current_user),
     service: VpnRuntimeService = Depends(get_vpn_runtime_service),
 ) -> VpnRuntimeResponse:
     try:

@@ -55,6 +55,20 @@ def test_get_runtime_requires_authentication() -> None:
     assert response.status_code == 401
 
 
+def test_start_vpn_requires_authentication_before_runtime_changes() -> None:
+    service = Mock()
+    app.dependency_overrides[get_vpn_runtime_service] = lambda: service
+
+    try:
+        response = client.post("/api/v1/vpn/start")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+    service.start.assert_not_called()
+
+
 def test_get_runtime_returns_health() -> None:
     service = Mock()
     service.get_traffic_mode.return_value = "vpn"
