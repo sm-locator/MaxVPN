@@ -36,27 +36,32 @@ export function DependencyDiagnostic({ onCommitted }: Props) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const timer = useRef<number | null>(null)
+  const generation = useRef(0)
 
   useEffect(() => () => {
+    generation.current += 1
     if (timer.current !== null) window.clearTimeout(timer.current)
   }, [])
 
 
 
 
-  async function poll(token: string) {
+  async function poll(token: string, run: number) {
     try {
       const next = await pollDependencyDiagnostic(token)
+      if (run !== generation.current) return
       setResult(next)
       if (next.running) {
-        timer.current = window.setTimeout(() => void poll(token), 1000)
+        timer.current = window.setTimeout(() => void poll(token, run), 1000)
       } else {
         // Match the appliance UI: candidates require explicit user selection.
         setSelected([])
         setBusy(false)
       }
     } catch (error) {
+      if (run !== generation.current) return
       setBusy(false)
+      setResult(null)
       setMessage(error instanceof Error ? error.message : 'Не удалось обновить диагностику. Запустите её снова.')
     }
   }
@@ -77,7 +82,9 @@ export function DependencyDiagnostic({ onCommitted }: Props) {
     // Keep the controlled component state aligned with the values actually submitted.
     setDomain(domainValue)
     setClientIp(clientIpValue)
+    const run = ++generation.current
     if (timer.current !== null) window.clearTimeout(timer.current)
+    setResult(null)
     setBusy(true); setMessage(null); setSelected([])
     try {
       const started = await startDependencyDiagnostic({
@@ -85,12 +92,14 @@ export function DependencyDiagnostic({ onCommitted }: Props) {
         ...(clientIpValue ? { client_ip: clientIpValue } : {}),
         duration_seconds: duration,
       })
+      if (run !== generation.current) return
       setResult(started)
       setMessage(
         `Диагностика запущена для клиента ${started.client_ip}. Откройте или обновите ${domainValue}.`,
       )
-      await poll(started.token)
+      await poll(started.token, run)
     } catch (error) {
+      if (run !== generation.current) return
       setBusy(false)
       const detail = error instanceof Error ? error.message : 'Не удалось запустить диагностику.'
       if (!clientIpValue && /IP клиента|IP client/i.test(detail)) {

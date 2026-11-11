@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import {
   addRussianDirectPreset,
@@ -17,6 +17,7 @@ import {
   login,
   logout,
   updateRule,
+  SESSION_EXPIRED_EVENT,
 } from './api/client'
 import { Dashboard } from './components/Dashboard'
 import { AdminSettings } from './components/AdminSettings'
@@ -48,6 +49,26 @@ function App() {
   const [modeChanging, setModeChanging] = useState(false)
   const [modeError, setModeError] = useState<string | null>(null)
   const [adminSettingsOpen, setAdminSettingsOpen] = useState(false)
+
+  const handleSessionExpired = useCallback(() => {
+    logout()
+    setUser(null)
+    setRules([])
+    setRussianDirectDomains([])
+    setStatus(null)
+    setRuntime(null)
+    setVlessRuntime(null)
+    setRuntimeError(null)
+    setAdminSettingsOpen(false)
+    setLoading(false)
+    setError('Сессия завершена. Войдите снова.')
+    setSessionChecked(true)
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+  }, [handleSessionExpired])
 
   async function refreshDashboard() {
     const [
@@ -403,19 +424,6 @@ function App() {
     setVlessRuntime(null)
     setRuntimeError(null)
     setError(null)
-    setSessionChecked(true)
-  }
-
-  function handleSessionExpired() {
-    logout()
-    setUser(null)
-    setRules([])
-    setRussianDirectDomains([])
-    setStatus(null)
-    setRuntime(null)
-    setVlessRuntime(null)
-    setRuntimeError(null)
-    setError('Сессия завершена. Войдите снова.')
     setSessionChecked(true)
   }
 

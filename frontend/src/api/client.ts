@@ -45,6 +45,7 @@ import type {
 
 const API_BASE = '/api/v1'
 const TOKEN_KEY = 'maxvpn_access_token'
+export const SESSION_EXPIRED_EVENT = 'maxvpn:session-expired'
 
 class ApiError extends Error {
   status: number
@@ -122,6 +123,14 @@ async function request<T>(
       // Keep default HTTP error text.
     }
 
+    if (
+      response.status === 401 && token &&
+      localStorage.getItem(TOKEN_KEY) === token
+    ) {
+      logout()
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+      detail = 'Сессия завершена. Войдите снова.'
+    }
     throw new ApiError(response.status, detail)
   }
 

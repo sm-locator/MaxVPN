@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getSmartRoutingDomainDiagnostic,
   setVlessApplianceKillSwitch,
+  SESSION_EXPIRED_EVENT,
 } from './client'
 
 const fetchMock = vi.fn()
@@ -92,5 +93,30 @@ describe('getSmartRoutingDomainDiagnostic', () => {
       status: 401,
       detail: 'Not authenticated',
     })
+  })
+
+  it('clears an expired token and announces the end of the session', async () => {
+    const removeItem = vi.fn()
+    const dispatchEvent = vi.fn()
+    vi.stubGlobal('localStorage', { getItem: () => 'old-token', removeItem })
+    vi.stubGlobal('window', { dispatchEvent })
+    fetchMock.mockResolvedValue({ ok: false, status: 401, json: async () => ({ detail: 'Invalid authentication credentials' }) })
+
+    await expect(getSmartRoutingDomainDiagnostic('example.test')).rejects.toMatchObject({ status: 401, message: 'Сессия завершена. Войдите снова.' })
+    expect(removeItem).toHaveBeenCalledWith('maxvpn_access_token')
+    expect(dispatchEvent.mock.calls[0][0].type).toBe(SESSION_EXPIRED_EVENT)
+  })
+
+  it('does not invalidate a new login when an old request returns 401 late', async () => {
+    const removeItem = vi.fn()
+    const getItem = vi.fn().mockReturnValueOnce('old-token').mockReturnValue('new-token')
+    const dispatchEvent = vi.fn()
+    vi.stubGlobal('localStorage', { getItem, removeItem })
+    vi.stubGlobal('window', { dispatchEvent })
+    fetchMock.mockResolvedValue({ ok: false, status: 401, json: async () => ({ detail: 'Invalid authentication credentials' }) })
+
+    await expect(getSmartRoutingDomainDiagnostic('example.test')).rejects.toMatchObject({ status: 401 })
+    expect(removeItem).not.toHaveBeenCalled()
+    expect(dispatchEvent).not.toHaveBeenCalled()
   })
 })
