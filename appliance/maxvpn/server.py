@@ -1685,10 +1685,11 @@ def apply_routing():
 
 def _apply_routing():
     c = db()
-    rows = c.execute(
-        "SELECT * FROM rules WHERE enabled=1 ORDER BY priority,id"
-    ).fetchall()
+    rows = c.execute("SELECT * FROM rules ORDER BY priority,id").fetchall()
     c.close()
+    # Record the exact snapshot used below; edits during apply stay pending.
+    applied_hash = rule_config_hash(rows)
+    rows = [r for r in rows if r["enabled"]]
     domains = [r["target"] for r in rows if r["target_type"] == "domain"]
     cidrs = [r["target"] for r in rows if r["target_type"] == "cidr"]
 
@@ -1707,7 +1708,7 @@ def _apply_routing():
     update_dnsmasq_domains(domains)
     rebuild_static_ipsets(cidrs)
     shell("/etc/init.d/dnsmasq reload")
-    set_applied_hash(rule_config_hash())
+    set_applied_hash(applied_hash)
     return routing_info()
 
 
