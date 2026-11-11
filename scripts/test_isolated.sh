@@ -7,6 +7,8 @@ project="maxvpn-test-$(printf '%s' "${scratch##*.}" | tr '[:upper:]' '[:lower:]'
 image_override="${MAXVPN_TEST_IMAGE:-}"
 export MAXVPN_TEST_IMAGE="${image_override:-$project-backend}"
 export MAXVPN_TEST_SOURCE="$scratch/source"
+export MAXVPN_TEST_UID="$(id -u)"
+export MAXVPN_TEST_GID="$(id -g)"
 export MAXVPN_TEST_PASSWORD
 MAXVPN_TEST_PASSWORD="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
 

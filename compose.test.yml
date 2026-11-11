@@ -2,6 +2,7 @@ x-test-runner: &test-runner
   image: ${MAXVPN_TEST_IMAGE:?Run make test-docker}
   pull_policy: never
   working_dir: /workspace
+  user: "${MAXVPN_TEST_UID:?Run make test-docker}:${MAXVPN_TEST_GID:?Run make test-docker}"
   cap_drop: [ALL]
   security_opt: [no-new-privileges:true]
   volumes:
