@@ -1,10 +1,14 @@
 from ipaddress import IPv4Address
 from unittest.mock import Mock
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_wireguard_manager
+from app.auth.dependencies import get_current_user
 from app.main import app
+from app.models.roles import UserRole
+from app.models.user import User
 from app.vpn.exceptions import ClientNotFoundError
 from app.vpn.models import WireGuardClient
 from app.vpn.wireguard.client import CreatedWireGuardClient
@@ -12,6 +16,15 @@ from app.vpn.wireguard.manager import WireGuardManager
 from app.vpn.wireguard.server_settings import WireGuardServerSettings
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def authenticated_admin():
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id=1, email="admin@example.test", password_hash="hash", role=UserRole.ADMIN
+    )
+    yield
+    app.dependency_overrides.clear()
 
 
 def test_create_client_returns_201():
