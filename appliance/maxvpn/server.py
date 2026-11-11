@@ -795,7 +795,11 @@ def update_dnsmasq_domains(domains):
     section = find_ipset_section(DIRECT_IPSET)
     if not section:
         raise RuntimeError(f"{DIRECT_IPSET} ipset not found in /etc/config/dhcp")
-    shell(f"uci -q delete {shlex.quote(section)}.domain")
+    # UCI removes the option entirely when the last domain is deleted. A
+    # subsequent apply/boot restore must still work for CIDR-only/empty rules.
+    option = section + ".domain"
+    if run(["uci", "-q", "get", option], check=False).returncode == 0:
+        run(["uci", "-q", "delete", option])
     for d in domains:
         shell(f"uci add_list {shlex.quote(section)}.domain={shlex.quote(d)}")
     shell("uci commit dhcp")
