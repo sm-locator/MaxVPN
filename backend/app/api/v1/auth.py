@@ -3,8 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
-from app.core.security import create_access_token
+from app.core.security import create_user_access_token
 from app.database.dependencies import get_db
+from app.models.roles import UserRole
 from app.models.user import User
 from app.schemas.auth import Token
 from app.schemas.user import (
@@ -55,11 +56,7 @@ def bootstrap_admin(
             detail=str(exc),
         ) from exc
 
-    access_token = create_access_token(
-        {
-            "sub": admin.email,
-        }
-    )
+    access_token = create_user_access_token(admin)
 
     return {
         "id": admin.id,
@@ -76,7 +73,12 @@ def register(
 ):
     service = UserService(db)
 
-    created_user = service.create_user(user)
+    try:
+        created_user = service.create_user(user)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
 
     return {
         "id": created_user.id,
@@ -106,22 +108,7 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 
-    access_token = create_access_token(
-        {
-            "sub": user.email,
-        }
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-    }
-
-    access_token = create_access_token(
-        {
-            "sub": user.email,
-        }
-    )
+    access_token = create_user_access_token(user)
 
     return {
         "access_token": access_token,
@@ -135,7 +122,7 @@ def update_my_credentials(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if str(current_user.role) != "admin":
+    if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="admin_required",
@@ -155,11 +142,7 @@ def update_my_credentials(
             detail=str(exc),
         ) from exc
 
-    access_token = create_access_token(
-        {
-            "sub": user.email,
-        }
-    )
+    access_token = create_user_access_token(user)
 
     return {
         "id": user.id,

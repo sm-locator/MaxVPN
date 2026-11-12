@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_role
 from app.database.dependencies import get_db
+from app.models.roles import UserRole
 from app.models.smart_routing_rule import SmartRoutingRule
 from app.models.user import User
 from app.repositories.smart_routing_dependency_group import (
@@ -27,6 +28,7 @@ from backend.services.smart_routing_sync import (
 
 router = APIRouter(
     prefix="/smart-routing/sync",
+    dependencies=[Depends(require_role(UserRole.ADMIN))],
     tags=["Smart Routing"],
 )
 

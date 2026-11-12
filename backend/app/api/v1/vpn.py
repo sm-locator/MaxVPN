@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_role
 from app.database.dependencies import get_db
+from app.models.roles import UserRole
 from app.models.user import User
 from app.schemas.vpn import (
     VpnProfileApplyResponse,
@@ -68,7 +69,7 @@ def get_runtime_mode(
 )
 def set_runtime_mode(
     data: VpnRuntimeModeUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     db: Session = Depends(get_db),
     service: VpnRuntimeService = Depends(get_vpn_runtime_service),
 ) -> VpnRuntimeModeResponse:
@@ -180,7 +181,7 @@ def get_runtime(
     response_model=VpnRuntimeResponse,
 )
 def start_vpn(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VpnRuntimeService = Depends(get_vpn_runtime_service),
 ) -> VpnRuntimeResponse:
     try:
@@ -222,7 +223,7 @@ def start_vpn(
     response_model=VpnRuntimeResponse,
 )
 def stop_vpn(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VpnRuntimeService = Depends(get_vpn_runtime_service),
 ) -> VpnRuntimeResponse:
     try:
@@ -516,7 +517,7 @@ def save_profile(
     response_model=VpnProfileReadResponse,
 )
 def import_current_runtime(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VpnProfileService = Depends(get_vpn_profile_service),
 ) -> VpnProfileReadResponse:
     try:
@@ -578,7 +579,7 @@ def validate_profile(
     response_model=VpnProfileApplyResponse,
 )
 def apply_profile(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VpnProfileService = Depends(get_vpn_profile_service),
 ) -> VpnProfileApplyResponse:
     try:

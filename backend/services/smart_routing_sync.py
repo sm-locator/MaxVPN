@@ -155,6 +155,50 @@ class SmartRoutingSyncService:
             "fingerprint": fingerprint,
         }
 
+    def apply_remote_runtime(
+        self, expected_fingerprint: str | None = None
+    ) -> dict[str, Any]:
+        """Apply the appliance's saved snapshot using its lock/hash protocol.
+
+        The web panel pushes rules into the appliance store. Re-rendering local
+        PostgreSQL rules here would use a second, incompatible persistence path.
+        Never retry this mutation after an ambiguous SSH failure.
+        """
+        before = self.fetch_remote_state()
+        if (
+            expected_fingerprint is not None
+            and before["fingerprint"] != expected_fingerprint
+        ):
+            raise SmartRoutingSyncError("remote_state_changed")
+        response = self._executor.run(
+            ["curl", "-fsS", "-X", "POST", f"{self.REMOTE_URL}/apply"]
+        )
+        if response.returncode != 0:
+            raise SmartRoutingSyncError(
+                "brume_routing_apply_failed: "
+                + (response.stderr or "remote command failed")
+            )
+        try:
+            payload = json.loads(response.stdout)
+        except (ValueError, TypeError) as exc:
+            raise SmartRoutingSyncError("brume_routing_apply_invalid_json") from exc
+        if (
+            not isinstance(payload, dict)
+            or payload.get("applied") is not True
+            or not isinstance(payload.get("runtime"), dict)
+        ):
+            raise SmartRoutingSyncError("brume_routing_apply_unconfirmed")
+        runtime = payload["runtime"]
+        needs_network_rule = any(
+            rule["enabled"]
+            and rule["target_type"] == "cidr"
+            and ip_network(rule["target"], strict=False).prefixlen < 32
+            for rule in before["rules"]
+        )
+        if runtime.get("mangle_static_net_count") != int(needs_network_rule):
+            raise SmartRoutingSyncError("appliance_runtime_verification_failed")
+        return runtime
+
     def test_remote_rule(
         self,
         target_type: str,

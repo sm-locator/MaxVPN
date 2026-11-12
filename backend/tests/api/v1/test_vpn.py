@@ -29,7 +29,7 @@ def make_user() -> User:
         id=42,
         email="vpn-test@example.com",
         password_hash="hash",
-        role="user",
+        role="admin",
     )
 
 

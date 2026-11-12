@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-12",
+  "state": "/tmp/maxvpn-live-e2e-20261112-final",
+  "browser_tests": 2,
+  "duration_seconds": 49.6,
+  "backend_tests": 1225,
+  "appliance_tests": 166,
+  "frontend_tests": 70,
+  "browser_failure_scenarios": 6,
+  "dns_persisted": [{"domain": "assets.example.test", "ipv4_addresses": ["203.0.113.40"]}],
+  "pcap_sha256": "751a6a7d5b26fdd61b1bc7ffbd27e1838808e4197900e2a141d59a2fd4aec342",
+  "pcap_size": 17874,
+  "windows": [
+    {"check": "No unmarked IPv4/IPv6 packets on WAN in VLESS mode", "start_offset": 11522, "end_offset": 14950, "forbidden_packets": 0},
+    {"check": "Browser-created CIDR and DNS exceptions pass alongside VLESS", "start_offset": 11522, "end_offset": 17874, "forbidden_packets": 0}
+  ],
+  "source_sha256": {
+    "backend/app/auth/dependencies.py": "f4a24b4581273191526629094c5a8d243c914e5ff0aaaefd3834f1bb957fc2b2",
+    "backend/app/core/security.py": "73b7497e2238a9493871e8fe465d22b33868f4411005e5ee528b8dc79f1334f7",
+    "backend/app/api/v1/smart_routing_apply.py": "cce5fbb42f3288e8fcfda856580070913d80baa7f25bfe97438881d04da91d59",
+    "backend/services/smart_routing_sync.py": "ebf09729e5ee79f5394f7cf6397d74086439c3bcac3505baabadd14ac8926629",
+    "appliance/maxvpn/server.py": "46d99ceace82aa3a294e3e6b48bd18818a151975c596ba8f4f4f05fa33996352",
+    "frontend/e2e/product-flow.live.ts": "9107b00201f11de9faea3d4b7bd50851467222eae07121ee155c1f6e4e985216",
+    "scripts/live_e2e.py": "338a0832162d994b148909d538f4d8533c56a502f502d336aa243d17414d891e",
+    "scripts/verify_openwrt_lab.py": "39f6b88f7c2fbf42461fe4bc339283403aa50336a6df9b197f7bbe5391164df3"
+  },
+  "live_services_stopped": true,
+  "limitations": ["AmneziaWG deferred", "Plain VLESS only; no REALITY", "No external DoH/TLS/URLTest or physical Brume 3", "Traffic fixture switches VPN through serial; browser profile is not activated"]
+}

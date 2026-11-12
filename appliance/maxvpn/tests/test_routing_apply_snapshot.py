@@ -2,6 +2,8 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from subprocess import CompletedProcess
+from unittest.mock import Mock
 
 import pytest
 
@@ -36,12 +38,49 @@ def routing_state(tmp_path, monkeypatch):
     connection.close()
 
     monkeypatch.setattr(appliance, "discover_network", lambda: None)
+    monkeypatch.setattr(appliance, "ensure_dnsmasq_ipset_support", lambda: None)
     monkeypatch.setattr(appliance, "WAN_IF", "eth1")
     monkeypatch.setattr(appliance, "WAN_GW", "192.0.2.1")
     monkeypatch.setattr(appliance, "ensure_direct_path", lambda: None)
     monkeypatch.setattr(appliance, "shell", lambda command: None)
     monkeypatch.setattr(appliance, "routing_info", lambda: {})
     return appliance.rule_config_hash()
+
+
+def test_missing_dnsmasq_ipset_aborts_before_runtime_changes(
+    routing_state, monkeypatch
+):
+    def unsupported():
+        raise RuntimeError("dnsmasq_ipset_support_required")
+
+    monkeypatch.setattr(appliance, "ensure_dnsmasq_ipset_support", unsupported)
+    changed = Mock()
+    monkeypatch.setattr(appliance, "ensure_direct_path", changed)
+    with pytest.raises(RuntimeError, match="dnsmasq_ipset_support_required"):
+        appliance.apply_routing()
+    changed.assert_not_called()
+    assert appliance.get_applied_hash() == ""
+
+
+@pytest.mark.parametrize(
+    "features,code,supported",
+    [
+        ("Compile time options: no-ipset", 0, False),
+        ("Compile time options: IPv6 ipset conntrack", 0, True),
+        ("", 1, False),
+    ],
+)
+def test_dnsmasq_feature_check(monkeypatch, features, code, supported):
+    monkeypatch.setattr(
+        appliance,
+        "run",
+        lambda *args, **kwargs: CompletedProcess([], code, stdout=features),
+    )
+    if supported:
+        appliance.ensure_dnsmasq_ipset_support()
+    else:
+        with pytest.raises(RuntimeError, match="dnsmasq_ipset_support_required"):
+            appliance.ensure_dnsmasq_ipset_support()
 
 
 def test_unchanged_snapshot_includes_disabled_rules_in_applied_hash(

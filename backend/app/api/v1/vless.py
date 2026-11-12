@@ -6,8 +6,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_role
 from app.database.dependencies import get_db
+from app.models.roles import UserRole
 from app.models.user import User
 from app.schemas.vless import (
     VlessApplianceKillSwitchUpdateRequest,
@@ -208,7 +209,7 @@ def get_runtime(
 
 @router.post("/runtime/prepare", response_model=VlessRuntimeResponse)
 def prepare_runtime(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ) -> VlessRuntimeResponse:
     try:
@@ -229,7 +230,7 @@ def prepare_runtime(
 
 @router.post("/runtime/start", response_model=VlessRuntimeResponse)
 def start_runtime(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ) -> VlessRuntimeResponse:
     try:
@@ -250,7 +251,7 @@ def start_runtime(
 
 @router.post("/runtime/stop", response_model=VlessRuntimeResponse)
 def stop_runtime(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ) -> VlessRuntimeResponse:
     try:
@@ -264,7 +265,7 @@ def stop_runtime(
 @router.post("/runtime/select", response_model=VlessRuntimeResponse)
 def select_runtime_outbound(
     data: VlessProfileSelectionRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ) -> VlessRuntimeResponse:
     try:
@@ -287,7 +288,7 @@ def select_runtime_outbound(
 
 @router.get("/appliance-sync/status", response_model=dict[str, Any])
 def get_appliance_sync_status(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ) -> dict[str, Any]:
     """Read maxvpn.lan profile drift and live selection mode
@@ -307,7 +308,7 @@ def get_appliance_sync_status(
 @router.put("/appliance/kill-switch", response_model=dict[str, bool])
 def set_appliance_kill_switch(
     data: VlessApplianceKillSwitchUpdateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ) -> dict[str, bool]:
     try:
@@ -321,7 +322,7 @@ def set_appliance_kill_switch(
 @router.post("/appliance-sync", response_model=dict[str, Any])
 def synchronize_from_appliance(
     data: VlessApplianceSyncRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ) -> dict[str, Any]:
     """Pull saved profiles/settings from maxvpn.lan to localhost;
@@ -347,7 +348,7 @@ def synchronize_from_appliance(
 
 @router.get("/runtime/selection-history", response_model=VlessSelectionHistoryResponse)
 def get_vless_selection_history(
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ):
     try:
@@ -377,7 +378,7 @@ def get_profile_delay_history(
 
 @router.get("/profiles/delays", response_model=VlessProfileDelayResponse)
 def test_profile_delays(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
     service: VlessRuntimeService = Depends(get_vless_runtime_service),
 ) -> VlessProfileDelayResponse:
     try:

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  applySmartRouting,
   getSmartRoutingDomainDiagnostic,
   setVlessApplianceKillSwitch,
   SESSION_EXPIRED_EVENT,
@@ -18,6 +19,15 @@ describe('getSmartRoutingDomainDiagnostic', () => {
   afterEach(() => {
     fetchMock.mockReset()
     vi.unstubAllGlobals()
+  })
+
+  it('applies the reviewed appliance snapshot', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ healthy: true }) })
+    await applySmartRouting('reviewed-snapshot')
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toBe('/api/v1/smart-routing/apply')
+    expect(options.method).toBe('POST')
+    expect(JSON.parse(options.body)).toEqual({ expected_remote_fingerprint: 'reviewed-snapshot' })
   })
 
   it('uses the authenticated diagnostic endpoint and URL-encodes the domain', async () => {

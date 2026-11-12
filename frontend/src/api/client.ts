@@ -507,9 +507,10 @@ export async function addRussianDirectPreset(): Promise<RussianDirectPresetRespo
   )
 }
 
-export async function applySmartRouting(): Promise<OpenWrtTrafficRoutingResult> {
+export async function applySmartRouting(expectedRemoteFingerprint?: string): Promise<OpenWrtTrafficRoutingResult> {
   return request<OpenWrtTrafficRoutingResult>('/smart-routing/apply', {
     method: 'POST',
+    body: JSON.stringify({ expected_remote_fingerprint: expectedRemoteFingerprint }),
   })
 }
 

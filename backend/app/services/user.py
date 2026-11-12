@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.models.roles import UserRole
@@ -9,6 +10,7 @@ from app.services.password import PasswordService
 
 class UserService:
     def __init__(self, db: Session):
+        self.db = db
         self.users = UserRepository(db)
 
     def admin_bootstrap_available(self) -> bool:
@@ -18,6 +20,10 @@ class UserService:
         return any(user.role == UserRole.ADMIN for user in self.users.get_all())
 
     def create_admin(self, email: str, password: str) -> User:
+        # Serialize first-run bootstrap across concurrent API workers. The lock
+        # lives until create() commits, or the request rolls back on refusal.
+        if self.db.get_bind().dialect.name == "postgresql":
+            self.db.execute(text("SELECT pg_advisory_xact_lock(638174921)"))
         if self.has_admin():
             raise ValueError("Admin already exists")
 

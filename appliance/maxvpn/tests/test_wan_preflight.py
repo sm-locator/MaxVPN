@@ -87,6 +87,7 @@ def test_apply_routing_rejects_unready_gateway_before_runtime_mutations(
 
 def test_apply_routing_proceeds_when_wan_gateway_is_valid(tmp_path, monkeypatch):
     _prepare_database(tmp_path, monkeypatch)
+    monkeypatch.setattr(appliance, "ensure_dnsmasq_ipset_support", lambda: None)
     monkeypatch.setattr(appliance, "WAN_IF", "eth1")
     monkeypatch.setattr(appliance, "WAN_GW", "192.0.2.1")
     monkeypatch.setattr(appliance, "discover_network", lambda: ("eth1", "192.0.2.1"))

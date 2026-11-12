@@ -1682,6 +1682,17 @@ def diagnostic_result(token):
     }
 
 
+def ensure_dnsmasq_ipset_support():
+    try:
+        version = run(["dnsmasq", "--version"], check=False)
+    except OSError as exc:
+        raise RuntimeError("dnsmasq_ipset_support_required") from exc
+    if version.returncode != 0 or not re.search(
+        r"(?<![\w-])ipset(?![\w-])", version.stdout
+    ):
+        raise RuntimeError("dnsmasq_ipset_support_required")
+
+
 def apply_routing():
     with routing_lock():
         return _apply_routing()
@@ -1707,6 +1718,8 @@ def _apply_routing():
     if gateway.is_unspecified or gateway.is_multicast or gateway.is_loopback:
         raise RuntimeError(f"WAN gateway is not a usable IPv4 address: {WAN_GW}")
 
+    if domains:
+        ensure_dnsmasq_ipset_support()
     # Validate WAN readiness before touching ipsets, mangle, policy routes or dnsmasq.
     ensure_direct_path()
     update_dnsmasq_domains(domains)

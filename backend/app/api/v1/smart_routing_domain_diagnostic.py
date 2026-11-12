@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_role
+from app.models.roles import UserRole
 from app.models.user import User
 from backend.application.container import (
     build_smart_routing_domain_diagnostic_service,
@@ -11,6 +12,7 @@ from backend.services.smart_routing_domain_diagnostic import (
 
 router = APIRouter(
     prefix="/smart-routing",
+    dependencies=[Depends(require_role(UserRole.ADMIN))],
     tags=["Smart Routing"],
 )
 

@@ -21,7 +21,7 @@ def make_user() -> User:
         id=42,
         email="user@example.com",
         password_hash="hash",
-        role="user",
+        role="admin",
     )
 
 

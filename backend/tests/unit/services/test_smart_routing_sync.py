@@ -1,5 +1,8 @@
+import json
 from pathlib import Path
+from unittest.mock import Mock
 
+import pytest
 from backend.models.command_result import CommandResult
 from backend.models.smart_routing_rule_data import SmartRoutingRuleData
 from backend.ports.remote_command_executor import RemoteCommandExecutor
@@ -7,6 +10,70 @@ from backend.services.smart_routing_sync import (
     SmartRoutingSyncError,
     SmartRoutingSyncService,
 )
+
+
+def test_apply_uses_appliance_endpoint_once(tmp_path):
+    executor = Mock(spec=RemoteCommandExecutor)
+    runtime = {
+        "config_hash": "saved",
+        "applied_config_hash": "saved",
+        "mangle_static_net_count": 0,
+    }
+    executor.run.side_effect = [
+        CommandResult(stdout=remote_payload([]), stderr="", returncode=0),
+        CommandResult(
+            stdout=json.dumps({"applied": True, "runtime": runtime}),
+            stderr="",
+            returncode=0,
+        ),
+    ]
+    sync = SmartRoutingSyncService(executor, preset_file(tmp_path))
+    assert sync.apply_remote_runtime() == runtime
+    assert executor.run.call_args.args[0] == [
+        "curl",
+        "-fsS",
+        "-X",
+        "POST",
+        sync.REMOTE_URL + "/apply",
+    ]
+    assert executor.run.call_count == 2
+
+
+def test_apply_rejects_stale_preview_before_mutation(tmp_path):
+    sync = service(tmp_path, [])
+    with pytest.raises(SmartRoutingSyncError, match="remote_state_changed"):
+        sync.apply_remote_runtime("old-fingerprint")
+    assert len(sync._executor.commands) == 1
+
+
+@pytest.mark.parametrize(
+    "response,error",
+    [
+        (
+            CommandResult(stdout="", stderr="connection reset by peer", returncode=1),
+            "apply_failed",
+        ),
+        (CommandResult(stdout="invalid", stderr="", returncode=0), "invalid_json"),
+        (
+            CommandResult(
+                stdout='{"applied": false, "runtime": {}}', stderr="", returncode=0
+            ),
+            "unconfirmed",
+        ),
+    ],
+)
+def test_apply_never_retries_ambiguous_or_unconfirmed_mutation(
+    tmp_path, response, error
+):
+    executor = Mock(spec=RemoteCommandExecutor)
+    executor.run.side_effect = [
+        CommandResult(stdout=remote_payload([]), stderr="", returncode=0),
+        response,
+    ]
+    sync = SmartRoutingSyncService(executor, preset_file(tmp_path))
+    with pytest.raises(SmartRoutingSyncError, match=error):
+        sync.apply_remote_runtime()
+    assert executor.run.call_count == 2
 
 
 class FakeExecutor(RemoteCommandExecutor):

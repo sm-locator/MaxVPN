@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:live": "playwright test --config playwright.live.config.ts",
+    "dev:live": "vite --config vite.live.config.ts",
     "dev:e2e": "vite --config vite.e2e.config.ts",
     "lint": "eslint .",
     "preview": "vite preview"

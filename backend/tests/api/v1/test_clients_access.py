@@ -10,7 +10,7 @@ from app.api.dependencies import (
     get_wireguard_server_settings,
 )
 from app.core.config import settings
-from app.core.security import create_access_token
+from app.core.security import create_user_access_token
 from app.database.dependencies import get_db
 from app.main import app
 from app.models.roles import UserRole
@@ -58,7 +58,7 @@ def test_denied_clients_access_never_reads_or_changes_peers(
                 settings.SECRET_KEY,
                 algorithm=settings.ALGORITHM,
             ),
-            "user": create_access_token({"sub": "user@example.test"}),
+            "user": create_user_access_token(db.scalar.return_value),
         }[identity]
         headers["Authorization"] = f"Bearer {token}"
 

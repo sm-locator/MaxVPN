@@ -1,17 +1,17 @@
 from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.api.v1.smart_routing_sync import get_sync_service
+from app.auth.dependencies import get_current_user, require_role
 from app.database.dependencies import get_db
+from app.models.roles import UserRole
 from app.models.user import User
 from backend.application.container import (
     build_preview_smart_routing_runtime_use_case,
     build_smart_routing_service_from_discovery,
-)
-from backend.application.use_cases.apply_smart_routing import (
-    ApplySmartRoutingUseCase,
 )
 from backend.application.use_cases.preview_smart_routing_runtime import (
     PreviewSmartRoutingRuntimeUseCase,
@@ -19,16 +19,17 @@ from backend.application.use_cases.preview_smart_routing_runtime import (
 from backend.infrastructure.openwrt.openwrt_traffic_routing import (
     OpenWrtTrafficRoutingResult,
 )
-from backend.services.smart_routing_policy_service import (
-    SmartRoutingPolicyService,
-)
 from backend.services.smart_routing_service import (
-    SmartRoutingRuntimeCapabilityError,
     SmartRoutingService,
+)
+from backend.services.smart_routing_sync import (
+    SmartRoutingSyncError,
+    SmartRoutingSyncService,
 )
 
 router = APIRouter(
     prefix="/smart-routing",
+    dependencies=[Depends(require_role(UserRole.ADMIN))],
     tags=["Smart Routing"],
 )
 
@@ -38,14 +39,8 @@ def get_smart_routing_service() -> SmartRoutingService:
     return build_smart_routing_service_from_discovery()
 
 
-def get_apply_use_case(
-    db: Session = Depends(get_db),
-    smart_routing: SmartRoutingService = Depends(get_smart_routing_service),
-) -> ApplySmartRoutingUseCase:
-    return ApplySmartRoutingUseCase(
-        smart_routing=smart_routing,
-        policy_service=SmartRoutingPolicyService(db),
-    )
+class SmartRoutingApplyRequest(BaseModel):
+    expected_remote_fingerprint: str | None = None
 
 
 def get_preview_smart_routing_runtime_use_case(
@@ -60,15 +55,59 @@ def get_preview_smart_routing_runtime_use_case(
 )
 def apply_smart_routing(
     current_user: User = Depends(get_current_user),
-    use_case: ApplySmartRoutingUseCase = Depends(get_apply_use_case),
+    service: SmartRoutingSyncService = Depends(get_sync_service),
+    data: SmartRoutingApplyRequest | None = None,
 ) -> OpenWrtTrafficRoutingResult:
     try:
-        return use_case.execute_for_user(current_user.id)
-    except SmartRoutingRuntimeCapabilityError as exc:
+        runtime = service.apply_remote_runtime(
+            data.expected_remote_fingerprint if data else None
+        )
+    except SmartRoutingSyncError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=(
+                status.HTTP_409_CONFLICT
+                if str(exc) == "remote_state_changed"
+                else status.HTTP_502_BAD_GATEWAY
+            ),
             detail=str(exc),
         ) from exc
+    counts = [
+        runtime.get("mangle_direct_count"),
+        runtime.get("mangle_static_count"),
+        runtime.get("mangle_static_net_count"),
+    ]
+    route_ok = "default" in str(runtime.get("table_200", ""))
+    ipsets_ok = all(
+        runtime.get(key) for key in ("direct_ipset", "static_ipset", "static_net_ipset")
+    )
+    policy_ok = any(
+        "fwmark 0x64/0xff" in line and "lookup 200" in line
+        for line in str(runtime.get("ip_rule", "")).splitlines()
+    )
+    snapshot_ok = bool(runtime.get("config_hash")) and runtime.get(
+        "config_hash"
+    ) == runtime.get("applied_config_hash")
+    healthy = (
+        ipsets_ok
+        and counts[:2] == [1, 1]
+        and counts[2] in (0, 1)
+        and route_ok
+        and policy_ok
+        and snapshot_ok
+    )
+    if not healthy:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="appliance_runtime_verification_failed",
+        )
+    return OpenWrtTrafficRoutingResult(
+        healthy=healthy,
+        direct_ipset_exists=bool(runtime.get("direct_ipset")),
+        direct_rule_count=sum(count for count in counts if isinstance(count, int)),
+        routing_table_exists=bool(runtime.get("table_200")),
+        direct_route_exists=route_ok,
+        reason=None if healthy else "appliance_runtime_verification_failed",
+    )
 
 
 @router.get(

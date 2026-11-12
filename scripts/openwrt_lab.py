@@ -1,6 +1,7 @@
 """Isolated QEMU lab: copy-on-write disks, loopback sockets, serial-only control.
 
-No bridged/TAP/user networking, host forwarding or physical router connections.
+No bridged/TAP networking or physical router connections. Optional SSH access
+uses a restricted management NIC and a host forward bound only to loopback.
 """
 
 import argparse
@@ -23,7 +24,7 @@ class Lab:
     def __init__(self, state):
         self.state = Path(state).resolve()
 
-    def start(self, images, resume=False):
+    def start(self, images, resume=False, ssh_port=None):
         if resume:
             for pidfile in self.state.glob("*.pid"):
                 if Path(f"/proc/{int(pidfile.read_text())}/cmdline").exists():
@@ -99,6 +100,13 @@ class Lab:
                         "-object",
                         f"filter-dump,id=wan-capture,netdev=wan,file={self.state}/wan-wire.pcap",
                     ]
+            if node == "router" and ssh_port is not None:
+                args += [
+                    "-netdev",
+                    f"user,id=management,net=10.77.0.0/24,restrict=on,hostfwd=tcp:127.0.0.1:{ssh_port}-10.77.0.15:22",
+                    "-device",
+                    "virtio-net-pci,netdev=management,mac=52:54:00:77:00:01",
+                ]
             subprocess.run(args, check=True, capture_output=True)
         print(f"Started isolated lab at {self.state}")
 
@@ -199,6 +207,7 @@ def main():
     start = sub.add_parser("start")
     start.add_argument("--images", required=True)
     start.add_argument("--resume", action="store_true")
+    start.add_argument("--ssh-port", type=int)
     command = sub.add_parser("exec")
     command.add_argument("node", choices=["router", "client", "wan"])
     command.add_argument("command")
@@ -206,7 +215,7 @@ def main():
     args = parser.parse_args()
     lab = Lab(args.state)
     if args.action == "start":
-        lab.start(args.images, resume=args.resume)
+        lab.start(args.images, resume=args.resume, ssh_port=args.ssh_port)
     elif args.action == "exec":
         print(lab.command(args.node, args.command))
     else:

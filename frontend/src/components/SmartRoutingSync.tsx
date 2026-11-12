@@ -342,7 +342,7 @@ export function SmartRoutingSync({ onRefresh }: Props) {
     setError(null)
 
     try {
-      await applySmartRouting()
+      await applySmartRouting(preview?.remote.fingerprint)
       await onRefresh()
       await refresh()
     } catch (err) {

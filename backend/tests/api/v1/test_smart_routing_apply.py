@@ -1,17 +1,13 @@
 from unittest.mock import Mock
 
-from backend.application.use_cases.apply_smart_routing import (
-    ApplySmartRoutingUseCase,
-)
-from backend.infrastructure.openwrt.openwrt_traffic_routing import (
-    OpenWrtTrafficRoutingResult,
-)
-from backend.services.smart_routing_service import (
-    SmartRoutingRuntimeCapabilityError,
+import pytest
+from backend.services.smart_routing_sync import (
+    SmartRoutingSyncError,
+    SmartRoutingSyncService,
 )
 from fastapi.testclient import TestClient
 
-from app.api.v1.smart_routing_apply import get_apply_use_case
+from app.api.v1.smart_routing_sync import get_sync_service
 from app.auth.dependencies import get_current_user
 from app.main import app
 from app.models.user import User
@@ -24,38 +20,44 @@ def make_user() -> User:
         id=42,
         email="user@example.com",
         password_hash="hash",
-        role="user",
+        role="admin",
     )
 
 
-def make_result() -> OpenWrtTrafficRoutingResult:
-    return OpenWrtTrafficRoutingResult(
-        healthy=True,
-        direct_ipset_exists=True,
-        direct_rule_count=2,
-        routing_table_exists=True,
-        direct_route_exists=True,
+def make_runtime() -> dict:
+    return dict(
+        direct_ipset=True,
+        static_ipset=True,
+        static_net_ipset=True,
+        mangle_direct_count=1,
+        mangle_static_count=1,
+        mangle_static_net_count=1,
+        ip_rule="100: from all fwmark 0x64/0xff lookup 200",
+        table_200="default via 198.18.0.1 dev eth1",
+        config_hash="snapshot",
+        applied_config_hash="snapshot",
     )
 
 
-def test_apply_uses_current_user_id() -> None:
+def test_apply_uses_saved_appliance_snapshot() -> None:
     current_user = make_user()
-    use_case = Mock(spec=ApplySmartRoutingUseCase)
-    use_case.execute_for_user.return_value = make_result()
+    service = Mock(spec=SmartRoutingSyncService)
+    service.apply_remote_runtime.return_value = make_runtime()
 
     app.dependency_overrides[get_current_user] = lambda: current_user
-    app.dependency_overrides[get_apply_use_case] = lambda: use_case
+    app.dependency_overrides[get_sync_service] = lambda: service
 
     try:
         response = client.post(
             "/api/v1/smart-routing/apply",
+            json={"expected_remote_fingerprint": "reviewed-snapshot"},
         )
     finally:
         app.dependency_overrides.clear()
 
     assert response.status_code == 200
     assert response.json()["healthy"] is True
-    use_case.execute_for_user.assert_called_once_with(42)
+    service.apply_remote_runtime.assert_called_once_with("reviewed-snapshot")
 
 
 def test_apply_requires_authentication() -> None:
@@ -66,15 +68,16 @@ def test_apply_requires_authentication() -> None:
     assert response.status_code == 401
 
 
-def test_apply_maps_runtime_capability_error_to_422() -> None:
+@pytest.mark.parametrize(
+    "error,code", [("remote_state_changed", 409), ("brume_routing_apply_failed", 502)]
+)
+def test_apply_maps_appliance_errors(error, code) -> None:
     current_user = make_user()
-    use_case = Mock(spec=ApplySmartRoutingUseCase)
-    use_case.execute_for_user.side_effect = SmartRoutingRuntimeCapabilityError(
-        "smart_routing_runtime_capability_error: domain targets are not supported"
-    )
+    service = Mock(spec=SmartRoutingSyncService)
+    service.apply_remote_runtime.side_effect = SmartRoutingSyncError(error)
 
     app.dependency_overrides[get_current_user] = lambda: current_user
-    app.dependency_overrides[get_apply_use_case] = lambda: use_case
+    app.dependency_overrides[get_sync_service] = lambda: service
 
     try:
         response = client.post(
@@ -83,12 +86,29 @@ def test_apply_maps_runtime_capability_error_to_422() -> None:
     finally:
         app.dependency_overrides.clear()
 
-    assert response.status_code == 422
-    assert response.json() == {
-        "detail": (
-            "smart_routing_runtime_capability_error: domain targets are not supported"
-        ),
-    }
+    assert response.status_code == code
+    assert response.json() == {"detail": error}
+
+
+@pytest.mark.parametrize(
+    "broken",
+    [
+        dict(mangle_static_count=2),
+        dict(ip_rule=""),
+        dict(applied_config_hash="old"),
+        dict(static_net_ipset=False),
+    ],
+)
+def test_apply_does_not_report_unverified_runtime_as_success(broken):
+    service = Mock(spec=SmartRoutingSyncService)
+    service.apply_remote_runtime.return_value = make_runtime() | broken
+    app.dependency_overrides[get_current_user] = make_user
+    app.dependency_overrides[get_sync_service] = lambda: service
+    try:
+        response = client.post("/api/v1/smart-routing/apply")
+    finally:
+        app.dependency_overrides.clear()
+    assert response.status_code == 502
 
 
 def make_runtime_plan() -> Mock:

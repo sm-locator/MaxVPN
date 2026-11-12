@@ -99,7 +99,7 @@ assert server.rule_config_hash() == server.get_applied_hash()
     lab.command("router", "sh /tmp/maxvpn-lab-install.sh", timeout=45)
     lab.command(
         "router",
-        "uci set dhcp.maxvpn_direct=ipset && uci set dhcp.maxvpn_direct.name=MAXVPN_DIRECT && uci set dhcp.maxvpn_direct.match=dest_ip && uci set dhcp.maxvpn_direct.family=ipv4 && uci commit dhcp && python3 /tmp/maxvpn-lab-seed.py && /etc/init.d/maxvpn-sing-box enable && /etc/init.d/maxvpn-sing-box restart && sleep 2 && /usr/bin/vpn-lan-off",
+        "uci set dhcp.maxvpn_direct=ipset && (uci -q delete dhcp.maxvpn_direct.name || true) && uci add_list dhcp.maxvpn_direct.name=MAXVPN_DIRECT && uci set dhcp.maxvpn_direct.match=dest_ip && uci set dhcp.maxvpn_direct.family=ipv4 && uci commit dhcp && python3 /tmp/maxvpn-lab-seed.py && /etc/init.d/maxvpn-sing-box enable && /etc/init.d/maxvpn-sing-box restart && sleep 2 && /usr/bin/vpn-lan-off",
         timeout=40,
     )
     print(
