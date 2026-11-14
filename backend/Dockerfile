@@ -3,24 +3,29 @@ FROM python:3.12-slim
 ARG UID=1000
 ARG GID=1000
 
-# Устанавливаем системные пакеты
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends \
+        git \
+        openssh-client \
+        wireguard-tools \
     && rm -rf /var/lib/apt/lists/*
 
-# Создаем пользователя
 RUN groupadd -g ${GID} appgroup \
-    && useradd -m -u ${UID} -g appgroup appuser
+    && useradd -m -u ${UID} -g appgroup appuser \
+    && mkdir -p /home/appuser/.ssh \
+    && chown appuser:appgroup /home/appuser/.ssh \
+    && chmod 700 /home/appuser/.ssh
 
-WORKDIR /app
+WORKDIR /app/backend
 
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY . /app/backend
 
-# Передаем права пользователю
+ENV PYTHONPATH=/app:/app/backend
+
 RUN chown -R appuser:appgroup /app
 
 USER appuser

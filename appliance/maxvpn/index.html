@@ -1,0 +1,4994 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MaxVPN</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#eef2f7;--nav:#081225;--blue:#2767e8;--muted:#71809a;--card:#fff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#eef2f7}.app{display:flex;min-height:100vh}.side{width:280px;background:var(--nav);color:#dbe4f5;padding:20px 16px;display:flex;flex-direction:column}.brand{display:flex;gap:14px;align-items:center;padding:6px 12px 22px;border-bottom:1px solid #1c2941}.logo{width:44px;height:44px;border-radius:12px;background:#2b6ff0;display:grid;place-items:center;color:white;font-size:24px;font-weight:800}.brand b{display:block;color:white;font-size:18px}.brand span{font-size:12px;color:#8da0bf}.nav{padding-top:20px}.nav button{width:100%;border:0;background:transparent;color:#c8d4e7;text-align:left;border-radius:12px;padding:13px 14px;margin:3px 0;cursor:pointer;font-size:15px}.nav button.active,.nav button:hover{background:#142a50;color:#fff}.bottom{margin-top:auto;border-top:1px solid #1c2941;padding:18px 12px 4px;font-size:12px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#31c48d;margin-right:8px}.bottom small{display:block;color:#7e8da8;margin-top:8px}.main{flex:1;padding:28px 34px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:800;color:#8290a7}.top h1{margin:8px 0 0;font-size:34px}.refresh{border:0;background:#fff;border-radius:12px;width:46px;height:46px;box-shadow:0 1px 8px #cbd2df;cursor:pointer;font-size:20px}.hero{background:linear-gradient(135deg,#0b1529,#172645);color:white;border-radius:24px;padding:30px 32px;margin-bottom:20px}.hero-row{display:flex;justify-content:space-between;gap:20px}.hero h2{margin:5px 0 8px;font-size:30px}.hero p{margin:0;color:#bcc9dd;line-height:1.6}.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:#153e35;color:#57e1ad;padding:8px 12px;font-size:12px;font-weight:800}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.card{background:var(--card);border:1px solid #dce3ed;border-radius:20px;padding:22px;box-shadow:0 2px 7px rgba(35,52,75,.04)}.label{font-size:13px;font-weight:800;color:#66758d}.big{font-size:26px;font-weight:800;margin-top:12px}.muted{color:var(--muted);font-size:13px;margin-top:5px}.section{display:none}.section.active{display:block}.rows{margin-top:12px}.row{display:flex;justify-content:space-between;gap:20px;border-top:1px solid #e6ebf2;padding:14px 0;font-size:14px}.row b{text-align:right}.mono{background:#091225;color:#dae6f8;border-radius:14px;padding:18px;overflow:auto;white-space:pre-wrap;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:11px;padding:11px 16px;font-weight:700;cursor:pointer}.btn.primary{background:#2b6ff0;color:white}.btn.danger{background:#feecec;color:#c94f5b}.btn.ghost{background:#edf2fa;color:#27354c}.form{display:flex;gap:10px;margin:16px 0;flex-wrap:wrap}.input,.select{border:1px solid #d1d9e5;background:#fff;border-radius:11px;padding:12px 13px;font:inherit}.input{flex:1;min-width:220px}.sr-table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.table{width:100%;border-collapse:collapse;margin-top:12px}.table th,.table td{padding:13px 10px;border-top:1px solid #e6ebf2;text-align:left;font-size:13px}.ok{color:#1d9366;font-weight:800}.warn{color:#bc7a11;font-weight:800}.route-head,.table-tools{display:flex;justify-content:space-between;align-items:center;gap:16px}.notice{margin-top:14px;padding:12px 14px;border-radius:11px;background:#eef6ff;color:#24589d;font-size:13px}.edit-input{width:100%;min-width:150px}.actions-cell{white-space:normal;min-width:180px;vertical-align:middle}.actions-cell .btn{margin:2px 3px 2px 0;padding:8px 10px;font-size:12px}.comment-cell{min-width:190px;max-width:240px;vertical-align:middle}.comment-wrap{display:flex;align-items:center;gap:8px;min-height:44px}.comment-input{width:100%;min-width:160px;height:44px;border:1px solid #d1d9e5;background:#fff;border-radius:11px;padding:11px 16px;font:inherit;font-size:13px;line-height:20px}.comment-input:focus{outline:2px solid rgba(43,111,240,.18);border-color:#8db0f7}.comment-status{display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#e7f7ef;color:#15925f;font-size:18px;line-height:1;font-weight:900;opacity:0;transform:scale(.92);transition:opacity .18s,transform .18s}.comment-status.show{opacity:1;transform:scale(1)}@media(max-width:1200px){.comment-cell{min-width:220px}.comment-input{min-width:180px}}@media(max-width:1000px){.side{width:220px}.grid4{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.main{padding:20px}.hero-row{flex-direction:column}}@media(max-width:700px){.app{display:block}.side{width:auto;min-height:auto}.nav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.nav button{font-size:13px}.bottom{display:none}.main{padding:16px}.grid4{grid-template-columns:1fr}.top h1{font-size:28px}}
+
+/* MAXVPN-DIAGNOSTIC-VISUAL-V1 */
+
+.diagnostic-overview{
+  display:grid;
+  grid-template-columns:minmax(220px,1.35fr) repeat(4,minmax(125px,.7fr));
+  gap:10px;
+  margin:14px 0 16px;
+}
+
+.diagnostic-overview-main,
+.diagnostic-stat{
+  min-width:0;
+  border:1px solid #e4eaf2;
+  background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);
+  border-radius:16px;
+  padding:13px 15px;
+}
+
+.diagnostic-overview-main{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.diagnostic-overview-title{
+  font-size:13px;
+  font-weight:800;
+  color:#24324a;
+}
+
+.diagnostic-overview-value{
+  margin-top:3px;
+  font-size:21px;
+  line-height:1.1;
+  font-weight:850;
+  color:#162238;
+}
+
+.diagnostic-overview-caption{
+  margin-top:4px;
+  font-size:11px;
+  color:#7c899e;
+}
+
+.diagnostic-stat-label{
+  font-size:10px;
+  line-height:1.2;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-weight:800;
+  color:#7b879b;
+}
+
+.diagnostic-stat-value{
+  margin-top:5px;
+  font-size:18px;
+  line-height:1;
+  font-weight:850;
+  color:#1d2a40;
+}
+
+.diagnostic-stat.confirmed .diagnostic-stat-value{
+  color:#17794f;
+}
+
+.diagnostic-stat.not-confirmed .diagnostic-stat-value{
+  color:#9a6700;
+}
+
+.diagnostic-stat.managed .diagnostic-stat-value{
+  color:#315fa9;
+}
+
+.diagnostic-group-card{
+  overflow:hidden;
+  border:1px solid #e2e8f1;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 5px 18px rgba(28,48,84,.06);
+  margin-top:14px;
+}
+
+.diagnostic-group-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px 18px 14px;
+  background:linear-gradient(180deg,#f8fbff 0%,#f5f8fc 100%);
+  border-bottom:1px solid #e9edf3;
+}
+
+.diagnostic-group-kicker{
+  font-size:10px;
+  line-height:1.2;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  font-weight:850;
+  color:#8190a5;
+}
+
+.diagnostic-group-title{
+  margin-top:3px;
+  font-size:17px;
+  line-height:1.2;
+  font-weight:850;
+  color:#18263d;
+}
+
+.diagnostic-group-meta{
+  margin-top:5px;
+  font-size:11px;
+  color:#8190a5;
+}
+
+.diagnostic-group-count{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  flex:0 0 auto;
+  padding:7px 10px;
+  border-radius:999px;
+  background:#edf3fb;
+  color:#415777;
+  font-size:11px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.diagnostic-group-count strong{
+  color:#18263d;
+}
+
+.diagnostic-table-wrap{
+  overflow-x:auto;
+}
+
+.diagnostic-table{
+  width:100%;
+  min-width:940px;
+  border-collapse:separate;
+  border-spacing:0;
+}
+
+.diagnostic-table th{
+  padding:10px 12px;
+  background:#fbfcfe;
+  border-bottom:1px solid #e9edf3;
+  color:#77859a;
+  font-size:10px;
+  line-height:1.2;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-weight:850;
+  text-align:left;
+}
+
+.diagnostic-table td{
+  padding:13px 12px;
+  border-bottom:1px solid #edf1f5;
+  vertical-align:top;
+  font-size:12px;
+}
+
+.diagnostic-table tbody tr:last-child td{
+  border-bottom:0;
+}
+
+.diagnostic-table tbody tr:hover td{
+  background:#fbfdff;
+}
+
+.diagnostic-number{
+  width:42px;
+  color:#98a5b7;
+  font-weight:800;
+}
+
+.diagnostic-resource-name{
+  font-size:13px;
+  line-height:1.25;
+  font-weight:850;
+  color:#1c2b43;
+  word-break:break-word;
+}
+
+.diagnostic-resource-meta{
+  margin-top:4px;
+  font-size:10px;
+  color:#8996a9;
+}
+
+.diagnostic-comment{
+  margin-top:6px;
+  padding-left:8px;
+  border-left:2px solid #e6ebf2;
+  font-size:10px;
+  line-height:1.35;
+  color:#8996a9;
+}
+
+.diagnostic-priority{
+  display:inline-flex;
+  align-items:center;
+  padding:5px 8px;
+  border-radius:8px;
+  background:#f3f6fa;
+  color:#45556e;
+  font-size:11px;
+  font-weight:850;
+  font-variant-numeric:tabular-nums;
+}
+
+.diagnostic-status{
+  display:inline-flex;
+  align-items:center;
+  min-height:27px;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:10px;
+  line-height:1;
+  letter-spacing:.02em;
+  font-weight:850;
+  white-space:nowrap;
+}
+
+.diagnostic-status.confirmed{
+  background:#e8f7ef;
+  border:1px solid #c5ead6;
+  color:#16764d;
+}
+
+.diagnostic-status.not-confirmed{
+  background:#fff4dc;
+  border:1px solid #eed79d;
+  color:#986600;
+}
+
+.diagnostic-status.managed{
+  background:#edf3ff;
+  border:1px solid #cfdbf5;
+  color:#315ea7;
+}
+
+.diagnostic-status.legacy{
+  background:#fff0e3;
+  border:1px solid #efd0ad;
+  color:#a15d18;
+}
+
+.diagnostic-actuality{
+  min-width:270px;
+}
+
+.diagnostic-actuality-detail{
+  margin-top:5px;
+  font-size:10px;
+  line-height:1.35;
+  color:#8190a5;
+}
+
+.diagnostic-evidence{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin-top:7px;
+}
+
+.diagnostic-evidence-item{
+  display:inline-flex;
+  max-width:100%;
+  padding:4px 6px;
+  border-radius:7px;
+  background:#f5f8fb;
+  border:1px solid #e5ebf2;
+  color:#52627a;
+  font-size:9px;
+  line-height:1.2;
+  word-break:break-word;
+}
+
+.diagnostic-legacy-note{
+  padding:9px 16px 13px;
+  font-size:10px;
+  color:#8b98aa;
+}
+
+.diagnostic-empty{
+  padding:24px 16px;
+  border:1px dashed #d8e0eb;
+  border-radius:14px;
+  background:#fafbfd;
+  color:#8491a4;
+  text-align:center;
+  font-size:12px;
+}
+
+.diagnostic-results-toggle{
+  margin-top:10px;
+}
+
+@media(max-width:1100px){
+  .diagnostic-overview{
+    grid-template-columns:repeat(2,minmax(140px,1fr));
+  }
+
+  .diagnostic-overview-main{
+    grid-column:1 / -1;
+  }
+}
+
+@media(max-width:700px){
+  .diagnostic-overview{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .diagnostic-overview-main{
+    grid-column:1 / -1;
+  }
+
+  .diagnostic-group-head{
+    flex-direction:column;
+  }
+
+  .diagnostic-group-count{
+    align-self:flex-start;
+  }
+}
+
+
+/* MAXVPN-DIAGNOSTIC-GROUP-TOGGLE-V1 */
+
+.diagnostic-group-toggle{
+  margin-top:9px;
+  padding:7px 11px !important;
+  min-height:32px;
+  font-size:11px !important;
+  font-weight:800 !important;
+  border-radius:9px !important;
+}
+
+.diagnostic-group-toggle:hover{
+  transform:none !important;
+}
+
+.diagnostic-group-toggle-wrap{
+  display:flex;
+  align-items:center;
+}
+
+
+/* MAXVPN-DIAGNOSTIC-SEARCH-HIGHLIGHT-FIX-V6 */
+
+.diagnostic-search-hit td{
+  background:#fff8e8 !important;
+}
+
+.diagnostic-search-hit td:first-child{
+  box-shadow:inset 4px 0 #e4b94c;
+}
+
+.diagnostic-search-hit .diagnostic-resource-name{
+  color:#8a5a00;
+}
+
+.diagnostic-search-hit .diagnostic-resource-name mark{
+  background:#ffe39a;
+  color:#704800;
+  border-radius:4px;
+  padding:1px 4px;
+  font-weight:900;
+}
+
+
+/* MAXVPN-UNIFIED-SEARCH-HIGHLIGHT-V1 */
+
+.smart-search-hit td{
+  background:#fff8e8 !important;
+}
+
+.smart-search-hit td:first-child{
+  box-shadow:inset 4px 0 #e4b94c;
+}
+
+.smart-search-hit mark{
+  background:#ffe39a;
+  color:#704800;
+  border-radius:4px;
+  padding:1px 4px;
+  font-weight:900;
+}
+
+</style>
+
+<style id="smart-routing-groups">
+.sr-note {
+  margin-top: 10px;
+  line-height: 1.55;
+}
+
+.sr-groups {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.sr-group {
+  overflow: hidden;
+}
+
+.sr-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.sr-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.sr-group-title h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.sr-group-count {
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.sr-group-subtitle {
+  margin-top: 4px;
+}
+
+.sr-group-toggle {
+  min-width: 42px;
+  padding: 8px 12px;
+  font-size: 18px;
+}
+
+.sr-group-body {
+  margin-top: 14px;
+}
+
+.sr-group-collapsed .sr-group-body {
+  display: none;
+}
+
+.sr-search {
+  margin-top: 16px;
+  max-width: 420px;
+}
+
+.sr-empty {
+  padding: 16px;
+  border: 1px dashed #ccd6e5;
+  border-radius: 12px;
+}
+
+.sr-resource-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.sr-resource-group {
+  border: 1px solid #dfe6f0;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.sr-resource-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sr-resource-title {
+  font-weight: 800;
+}
+
+.sr-resource-count {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sr-resource-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid #edf1f6;
+}
+
+.sr-resource-item:first-child {
+  border-top: 0;
+}
+
+.sr-resource-main {
+  min-width: 0;
+}
+
+.sr-resource-host {
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.sr-resource-meta {
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.sr-resource-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* SR RULE ACTIONS */
+.sr-rule-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.sr-rule-edit {
+  white-space: nowrap;
+}
+
+.sr-rule-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 42px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #c9d2df;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.sr-rule-switch span {
+  width: 18px;
+  height: 18px;
+  margin-left: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.18);
+  transition: transform .16s ease;
+}
+
+.sr-rule-switch.switch-on {
+  background: #2b6ff0;
+}
+
+.sr-rule-switch.switch-on span {
+  transform: translateX(18px);
+}
+
+.sr-rule-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #f0d4d7;
+  border-radius: 8px;
+  background: #fff6f7;
+  color: #c94f5b;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sr-rule-delete:hover {
+  background: #feecec;
+}
+
+.actions-cell {
+  min-width: 170px;
+}
+
+@media (max-width: 900px) {
+  .sr-group-head,
+  .sr-resource-head,
+  .sr-resource-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .sr-resource-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* MAXVPN LOCAL VLESS PANEL */
+.vless-mode-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.vless-mode-btn{border:1px solid #d4deeb;background:#f6f8fc;color:#24334d;padding:12px 16px;border-radius:12px;font-weight:800;cursor:pointer}
+.vless-mode-btn.active{background:#17233a;color:#fff;border-color:#17233a}
+.vless-mode-btn:disabled,.btn:disabled{opacity:.55;cursor:not-allowed}
+.vless-note{border:1px solid #f0dfad;background:#fff9e8;color:#876020;border-radius:12px;padding:13px 15px;margin:14px 0;font-size:13px;line-height:1.5}
+.vless-ok-note{border-color:#c9eedb;background:#effbf5;color:#18784f}
+.vless-error-note{border-color:#f4c7c7;background:#fff1f1;color:#a32c3b}
+.vless-form{display:grid;gap:10px;margin-top:14px}
+.vless-form textarea{width:100%;min-height:140px;resize:vertical;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+.vless-profile-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.vless-profile-tools .input{min-width:240px}
+.vless-state-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0}
+.vless-state-tile{background:#f7f9fc;border:1px solid #e2e8f1;border-radius:14px;padding:14px;min-width:0}
+.vless-state-tile .label{font-size:12px}
+.vless-state-tile strong{display:block;margin-top:8px;font-size:17px;overflow-wrap:anywhere}
+.vless-active-banner{padding:14px 16px;border:1px solid #d9e3f0;background:#f8fafd;border-radius:14px;margin:14px 0;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.vless-active-banner strong{display:block;margin:5px 0;font-size:16px}
+.vless-active-banner small{color:var(--muted)}
+.vless-profile-actions{display:flex;gap:5px;flex-wrap:wrap}
+.vless-profile-actions .btn{padding:8px 10px;font-size:12px}
+.vless-table td{vertical-align:middle}
+.vless-badge{display:inline-flex;padding:5px 8px;border-radius:99px;background:#e9f8f0;color:#168455;font-weight:800;font-size:11px}
+.vless-badge.off{background:#fff4e5;color:#9a650f}
+.vless-badge.bad{background:#ffecec;color:#b33d48}
+.vless-badge.pending{background:#fff4d9;color:#976600;border:1px solid #f0dfad}
+.vless-country{font-size:12px;font-weight:800;color:#51627e;margin-bottom:4px;white-space:nowrap}
+.vless-country.unknown{font-weight:600;color:var(--muted)}
+.vless-small-note{font-size:12px;color:var(--muted);line-height:1.5}
+.vless-history-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.vless-history-heading h3{margin:0}.vless-history-heading p{margin:6px 0 0}.vless-history-content{margin-top:10px}.vless-history-content .vless-batch-results{margin-top:8px}.vless-history-card{padding:14px 18px}
+@media(max-width:1000px){.vless-state-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.vless-state-grid{grid-template-columns:1fr}.vless-profile-tools{align-items:stretch}.vless-profile-tools .input{min-width:0;width:100%}.vless-active-banner{align-items:flex-start;flex-direction:column}}
+
+/* MAXVPN-APPLIANCE-URLTEST-MEASUREMENTS-V1 */
+.vless-urltest-panel{margin-top:16px;padding-top:14px;border-top:1px solid #e6ebf2}
+.vless-urltest-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.vless-urltest-title{font-size:15px;line-height:1.25;font-weight:850;color:#18263d}
+.vless-urltest-meta{font-size:11px;color:#71809a;text-align:right;white-space:nowrap}
+.vless-urltest-note{font-size:11px;line-height:1.45;color:#71809a;margin:6px 0 10px}
+.vless-urltest-snapshot{font-size:11px;line-height:1.4;color:#66758d;margin:0 0 9px}
+.vless-urltest-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.vless-urltest-card{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;min-height:68px;padding:9px 11px;border:1px solid #e0e6ee;border-radius:10px;background:#f8fafc}
+.vless-urltest-card-active{border-color:#86efac;background:#f0fdf4;box-shadow:inset 0 0 0 1px rgba(34,197,94,.05)}
+.vless-urltest-server{min-width:0;flex:1}
+.vless-urltest-country{font-size:12px;line-height:1.3;font-weight:800;color:#172033;overflow-wrap:anywhere}
+.vless-urltest-address{font-size:10px;line-height:1.35;color:#71809a;margin-top:3px;overflow-wrap:anywhere}
+.vless-urltest-age{font-size:10px;line-height:1.35;color:#71809a;margin-top:4px;overflow-wrap:anywhere}
+.vless-urltest-age.stale{color:#a16207}
+.vless-urltest-value{flex:0 0 auto;min-width:65px;text-align:right;align-self:center}
+.vless-urltest-delay{font-size:15px;line-height:1.15;font-weight:850;font-variant-numeric:tabular-nums;color:#172033;white-space:nowrap}
+.vless-urltest-no-sample{font-size:13px;color:#7b879b}
+.vless-urltest-active-badge{display:inline-block;margin-top:4px;padding:3px 6px;border-radius:999px;background:#dcfce7;color:#166534;font-size:9px;line-height:1.2;font-weight:850;text-transform:uppercase;white-space:nowrap}
+.vless-urltest-empty{padding:10px 12px;border:1px dashed #d5deea;border-radius:10px;color:#71809a;font-size:12px;background:#fafbfd}
+@media(max-width:800px){.vless-urltest-grid{grid-template-columns:1fr}.vless-urltest-head{align-items:flex-start}.vless-urltest-meta{white-space:normal}}
+
+
+/* MAXVPN-APPLIANCE-HISTORY-UX-V2 */
+.vless-history-current{margin:10px 0;padding:10px 12px;border:1px solid #dbe5f0;border-radius:10px;background:#f8fafc}
+.vless-history-current-title{font-size:10px;letter-spacing:.04em;text-transform:uppercase;font-weight:800;color:#71809a;margin-bottom:4px}
+.vless-history-current-main{font-size:13px;font-weight:800;color:#18263d;overflow-wrap:anywhere}
+.vless-history-current-meta{font-size:11px;color:#71809a;margin-top:4px}
+.vless-history-warning{margin:8px 0;padding:9px 11px;border:1px solid #f4d28b;border-radius:9px;background:#fffbeb;color:#92400e;font-size:11px;line-height:1.5}
+.vless-history-events{display:grid;gap:8px;margin-top:10px}
+.vless-history-event{padding:10px 12px;border:1px solid #e0e6ee;border-radius:10px;background:#fff}
+.vless-history-event-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px}
+.vless-history-event-head strong{font-size:12px;color:#18263d}
+.vless-history-event-type{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef2ff;color:#46546b;font-size:10px;font-weight:800}
+.vless-history-event-route{font-size:12px;line-height:1.45;margin-top:5px;overflow-wrap:anywhere}
+.vless-history-event-metrics{font-size:11px;line-height:1.45;color:#71809a;margin-top:4px}
+.vless-history-detail{margin-top:7px;font-size:11px;line-height:1.5}
+.vless-history-detail summary{cursor:pointer;color:#53627a;font-weight:750}
+.vless-history-detail-body{margin-top:6px;color:#71809a;overflow-wrap:anywhere}
+
+
+/* MAXVPN-COUNTRY-FLAG-SVG-V3 */
+.vless-country-flag{display:inline-flex;width:24px;height:16px;flex:0 0 24px;align-items:center;justify-content:center;vertical-align:-3px;overflow:hidden;border-radius:2px;box-shadow:0 0 0 1px rgba(15,23,42,.16)}
+.vless-country-flag-svg{display:block;width:24px;height:16px}
+.vless-country-label{display:inline-flex;align-items:center;gap:7px;vertical-align:middle}
+.vless-country-label-text{display:inline-block}
+.vless-urltest-country{display:flex;align-items:center;gap:6px}
+
+</style>
+
+</head>
+<body>
+<div class="app">
+<aside class="side"><div class="brand"><div class="logo">M</div><div><b>MaxVPN</b><span>Brume 3</span></div></div>
+<div class="nav">
+<button data-page="overview" class="active">⌂ &nbsp; Обзор</button><button data-page="vpn">ϟ &nbsp; VPN / Протокол</button><button data-page="vless">◇ &nbsp; VLESS + REALITY</button><button data-page="routing">⇄ &nbsp; Smart Routing</button><button data-page="devices">▣ &nbsp; Устройства</button><button data-page="dns">⌁ &nbsp; DNS</button><button data-page="system">⚙ &nbsp; Система</button>
+</div><div class="bottom"><div><i class="dot"></i>Соединение активно</div><small>maxvpn.lan</small></div></aside>
+<main class="main"><div class="top"><div><div class="eyebrow">MaxVPN Appliance</div><h1 id="title">Обзор</h1></div><button class="refresh" onclick="refreshAll()">↻</button></div>
+<section id="overview" class="section active"><div class="hero"><div class="hero-row"><div><div class="eyebrow" style="color:#96a7c4">Домашняя сеть</div><h2 id="heroTitle">VPN-шлюз работает</h2><p>MaxVPN запущен непосредственно на Brume 3. Управление выполняется на роутере.</p></div><div class="pill">● RUNNING</div></div></div><div class="grid4"><div class="card"><div class="label">Протокол / маршрут</div><div class="big" id="ovVpn">—</div><div class="muted">Текущий режим LAN</div></div><div class="card"><div class="label" id="ovMetric2Label">Состояние VPN</div><div class="big" id="ovHs">—</div><div class="muted" id="ovMetric2Help">Состояние активного протокола</div></div><div class="card"><div class="label" id="ovMetric3Label">Текущий сервер</div><div class="big" id="ovRx">—</div><div class="muted" id="ovMetric3Help">Активный endpoint</div></div><div class="card"><div class="label" id="ovMetric4Label">Маршрут LAN</div><div class="big" id="ovTx">—</div><div class="muted" id="ovMetric4Help">Состояние маршрутизации</div></div></div><div class="grid2"><div class="card"><div class="label">VPN-интерфейс</div><div class="rows" id="ovVpnRows"></div></div><div class="card"><div class="label">Smart Routing</div><div class="rows" id="ovRouteRows"></div></div></div></section>
+<section id="vpn" class="section">
+  <div class="card">
+    <div class="label">LAN TRAFFIC</div>
+    <h2>Протокол и режим маршрутизации</h2>
+    <p class="muted">Выбор режима меняет основной маршрут LAN. Активные DIRECT-исключения Smart Routing сохраняются и направляют совпадающие ресурсы через WAN.</p>
+    <div class="vless-mode-row" id="vpnModeButtons">
+      <button class="vless-mode-btn" data-mode="wan" onclick="setVpnMode('wan')">WAN · напрямую</button>
+      <button class="vless-mode-btn" data-mode="vpn" onclick="setVpnMode('vpn')">AmneziaWG</button>
+      <button class="vless-mode-btn" data-mode="vless" onclick="setVpnMode('vless')">VLESS + REALITY</button>
+    </div>
+    <div id="vpnModeNotice" class="vless-note" role="status">Загрузка текущего режима…</div>
+    <div class="grid2">
+      <div class="card" style="box-shadow:none"><div class="label" id="vpnDetailsTitle">Состояние VPN / маршрута</div><div class="rows" id="vpnRows"></div></div>
+      <div class="card" style="box-shadow:none"><div class="label">Безопасные переходы</div><p class="muted">VLESS выбирается только после проверки конфигурации sing-box и состояния процесса. При остановке sing-box, если LAN направлен через VLESS, приложение сначала пытается вернуть LAN на WAN.</p><div class="actions"><button class="btn ghost" onclick="refreshAll()">Обновить состояние</button><button class="btn ghost" onclick="document.querySelector('[data-page=&quot;vless&quot;]').click()">Открыть управление VLESS</button></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="vless" class="section">
+  <div class="card">
+    <div class="route-head"><div><div class="label">ALTERNATIVE VPN</div><h2>VLESS + REALITY</h2><p class="muted">До 50 профилей · sing-box · автовыбор по задержке · ручное закрепление сервера</p></div><button class="btn ghost" onclick="refreshVless()">Обновить</button></div>
+    <div class="vless-state-grid">
+      <div class="vless-state-tile"><div class="label">sing-box</div><strong id="vlessInstalled">Проверка…</strong></div>
+      <div class="vless-state-tile"><div class="label">Процесс</div><strong id="vlessRunning">Проверка…</strong></div>
+      <div class="vless-state-tile"><div class="label">Включено серверов</div><strong id="vlessEnabledCount">—</strong></div>
+      <div class="vless-state-tile"><div class="label">LAN через VLESS</div><strong id="vlessLanMode">—</strong></div>
+    </div>
+    <div id="vlessNotice" class="vless-note" role="status">Загрузка состояния VLESS…</div>
+    <div id="vlessWanFallbackStatus" class="vless-note vless-error-note" role="status" aria-live="assertive" style="display:none"></div>
+    <div class="vless-active-banner">
+      <div><span class="label">ФАКТИЧЕСКИЙ ТЕКУЩИЙ СЕРВЕР</span><strong id="vlessActiveName">Не определён</strong><small id="vlessActiveAddress">—</small><small id="vlessActiveMeasurement" style="display:block;margin-top:6px;line-height:1.45">Последняя проверка задержки: ожидается снимок URLTest</small></div>
+      <div class="actions"><span id="vlessSelectionMode" class="vless-badge">Режим не подтверждён</span><button id="vlessAutoBannerButton" class="btn ghost" onclick="selectVless(null)">Включить автовыбор</button></div>
+    </div>
+    <div id="vlessSelectionPending" class="vless-note" role="status" aria-live="polite" style="display:none"></div>
+    <div id="vlessUrltestMeasurementsPanel"></div>
+  </div>
+
+  <div class="card vless-history-card" style="margin-top:18px">
+    <div id="vlessSelectionHistoryPanel"></div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <div class="route-head">
+      <div><h2>Список серверов</h2><p class="muted">По умолчанию показан только действующий сервер. Остальные профили доступны по раскрытию списка.</p></div>
+      <div class="actions">
+        <button id="vlessProfilesToggle" class="btn ghost" aria-expanded="false" aria-controls="vlessProfilesDisclosure" onclick="toggleVlessProfilesList()">Показать все серверы</button>
+        <button id="vlessDelayButton" class="btn ghost" onclick="testVlessDelays()">Проверить задержки</button>
+      </div>
+    </div>
+    <div id="vlessProfilesDisclosure" style="display:none">
+      <div class="vless-profile-tools">
+        <p class="muted">История доступности серверов и счётчик неудачных проверок относятся только к проверкам, запущенным на BRUME 3. Они не объединяются с историей localhost:8080. «Первый отказ» — время первой неудачной проверки этого контура, а не подтверждённое время начала сбоя сервера.</p>
+        <input id="vlessSearch" class="input" placeholder="Поиск по имени, адресу или SNI" oninput="renderVlessProfiles()">
+        <select id="vlessFilter" class="select" onchange="renderVlessProfiles()"><option value="all">Все серверы</option><option value="enabled">Включённые</option><option value="reachable">Отвечают</option><option value="failed">Нет ответа</option><option value="stale">Проверка устарела</option><option value="disabled">Отключённые</option></select>
+      </div>
+      <div class="muted" id="vlessProfileCount">—</div>
+      <div class="sr-table-wrap"><table class="table vless-table"><thead><tr><th>№</th><th>Сервер</th><th>Параметры</th><th>Состояние</th><th>Задержка / источник</th><th>Действия</th></tr></thead><tbody id="vlessProfilesBody"><tr><td colspan="6">Загрузка…</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h2>Импорт серверов</h2>
+    <p class="muted">Вставьте до 50 ссылок <code>vless://</code> по одной на строку или содержимое файла экспорта из панели localhost:8080. Можно выбрать JSON-файл напрямую.</p>
+    <div class="vless-form">
+      <input id="vlessImportFile" class="input" type="file" accept=".json,.txt,application/json,text/plain" onchange="loadVlessImportFile(event)">
+      <textarea id="vlessImportSource" class="input" placeholder="vless://UUID@server:443?...&#10;&#10;Или вставьте JSON maxvpn-vless-profiles.json"></textarea>
+      <div class="actions"><button class="btn primary" id="vlessImportButton" onclick="importVlessProfiles()">Импортировать / обновить профили</button><button class="btn ghost" onclick="$('vlessImportSource').value='';$('vlessImportFile').value='';">Очистить</button></div>
+      <p class="vless-small-note">Файл экспорта содержит UUID и параметры REALITY. Не отправляйте его посторонним и удалите после переноса. Импорт обновляет совпадающие профили и не удаляет существующие автоматически.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h2>Автовыбор и управление sing-box</h2>
+    <div class="form">
+      <label>Интервал проверки<br><select id="vlessInterval" class="select"><option value="30s">30 секунд</option><option value="1m">1 минута</option><option value="2m">2 минуты</option><option value="3m">3 минуты</option><option value="5m">5 минут</option><option value="10m">10 минут</option></select></label>
+      <label>Допуск переключения (мс)<br><input id="vlessTolerance" class="input" type="number" min="0" max="5000" step="25" value="50"></label>
+      <div class="vless-kill-switch-control" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex:1 0 100%"><div><strong>Kill Switch</strong><div id="vlessKillSwitchState" class="muted">Загрузка состояния…</div></div><button id="vlessKillSwitchButton" type="button" class="btn primary" onclick="toggleVlessKillSwitch()" aria-pressed="true" disabled>Kill Switch: ON</button></div>
+      <button id="vlessSettingsButton" class="btn ghost" onclick="saveVlessSettings()">Сохранить параметры</button>
+    </div>
+    <p class="vless-note vless-error-note">ON: при отказе всех включённых профилей AUTO, закреплённого профиля MANUAL или sing-box трафик LAN останется заблокированным. OFF: после двух последовательных неудачных проверок LAN временно переключится напрямую на WAN, вне VLESS и AmneziaWG; после двух успешных проверок VLESS будет восстановлен автоматически. Kill Switch действует сразу; интервал и допуск URLTest применяются после применения конфигурации.</p>
+    <div class="actions"><button id="vlessPrepareButton" class="btn ghost" onclick="prepareVless()">Подготовить конфигурацию</button><button id="vlessApplyButton" class="btn primary" onclick="applyVless()">Применить и запустить / перезапустить</button><button id="vlessStopButton" class="btn danger" onclick="stopVless()">Остановить sing-box</button></div>
+    <p class="muted">Перед заменой конфигурации sing-box проверяет новый файл и сохраняет приватную резервную копию. При ошибке выполняется попытка восстановить предыдущий рабочий конфиг. Существующие DIRECT-правила не меняются.</p>
+  </div>
+</section>
+<section id="routing" class="section">
+
+<div class="card">
+  <div class="label">Smart Routing</div>
+
+  <div class="route-head">
+    <div>
+      <h2>Исключения из VPN</h2>
+      <p class="muted sr-note" id="srModeNote">
+        Основной маршрут LAN зависит от выбранного режима. Активные DIRECT-правила Smart Routing направляют совпадающие ресурсы напрямую через WAN.
+      </p>
+      <p class="muted sr-note">
+        Доменные DIRECT-правила учитывают IPv4 (A) и IPv6 (AAAA).
+        Ручное добавление IPv6 CIDR пока не поддерживается.
+      </p>
+    </div>
+
+    <div id="dirtyBadge"
+         class="pill"
+         style="background:#fff4d9;color:#9b6a00;display:none">
+      Есть неприменённые изменения
+    </div>
+  </div>
+
+  <div class="form">
+    <select id="rtType" class="select">
+      <option value="domain">Домен</option>
+      <option value="cidr">CIDR</option>
+    </select>
+
+    <input id="rtTarget"
+           class="input"
+           placeholder="example.ru или 192.0.2.0/24">
+
+    <input id="rtPriority"
+           class="input"
+           type="number"
+           min="1"
+           placeholder="Приоритет (необязательно)"
+           style="max-width:220px">
+
+    <input id="rtComment"
+           class="input"
+           maxlength="500"
+           placeholder="Комментарий (необязательно)"
+           style="max-width:300px">
+
+    <button class="btn primary" onclick="addRule()">Добавить</button>
+  </div>
+
+  <div class="actions">
+    <button id="applyBtn"
+            class="btn primary"
+            onclick="applyRouting()">
+      Применить
+    </button>
+
+    <button class="btn ghost"
+            onclick="loadPreset()">
+      Загрузить стандартный список РФ
+    </button>
+
+    <button class="btn ghost"
+            onclick="refreshAll()">
+      Обновить
+    </button>
+  </div>
+
+  <div id="applyResult"
+       class="notice"
+       style="display:none">
+  </div>
+</div>
+
+
+<!-- ========================================================
+     DIAGNOSTICS
+     ======================================================== -->
+
+<div class="card" style="margin-top:16px">
+
+  <div class="label">Диагностика</div>
+
+  <h3 style="margin:8px 0 6px">
+    Почему сайт загружается не полностью?
+  </h3>
+
+  <p class="muted">
+    Наблюдаем DNS-запросы конкретного клиента и выделяем ресурсы,
+    которые могут быть связаны с загрузкой сайта.
+    Релевантность — эвристика по DNS-признакам,
+    а не доказательство HTTP-зависимости.
+  </p>
+
+  <div class="form">
+    <input id="diagSite"
+           class="input"
+           placeholder="Сайт, например 2gis.ru">
+
+    <input id="diagClient"
+           class="input"
+           placeholder="IP клиента (необязательно)">
+
+    <input id="diagDuration"
+           class="input"
+           type="number"
+           min="5"
+           max="300"
+           value="30"
+           style="max-width:160px">
+
+    <button class="btn primary"
+            onclick="startDiagnostic()">
+      Запустить диагностику
+    </button>
+
+<button
+  id="diagnosticResourcesToggle"
+  type="button"
+  class="btn ghost diagnostic-results-toggle"
+  onclick="toggleDiagnosticResources()"
+  aria-controls="diagnosticGroups"
+  aria-expanded="true"
+>
+  Скрыть найденные ресурсы
+</button>
+
+  </div>
+
+  <div id="diagNotice"
+       class="notice"
+       style="display:none">
+  </div>
+
+  <div id="diagResults"
+       style="margin-top:14px">
+  </div>
+
+</div>
+
+
+<!-- ========================================================
+     RULE GROUPS
+     ======================================================== -->
+
+<div class="sr-search">
+  <input id="rtSearch"
+         class="input"
+         placeholder="Поиск по домену или CIDR"
+         oninput="handleRuleSearch()">
+</div>
+
+<div class="sr-groups">
+
+  <!-- Ru DIRECT -->
+
+  <div id="srGroupRuDirect"
+       class="card sr-group">
+
+    <div class="sr-group-head">
+      <div>
+        <div class="label">Ru DIRECT</div>
+
+        <div class="sr-group-title">
+          <h3>Российские сервисы</h3>
+          <span id="ruDirectCount"
+                class="sr-group-count">
+            0
+          </span>
+        </div>
+
+        <div class="muted sr-group-subtitle">
+          Базовый набор DIRECT-правил
+        </div>
+      </div>
+
+      <button class="btn ghost sr-group-toggle"
+              id="ruDirectToggle"
+              aria-expanded="false"
+              onclick="toggleSmartGroup('ruDirect')">
+        ▸
+      </button>
+    </div>
+
+    <div id="ruDirectBody"
+         class="sr-group-body"
+         style="display:none;">
+
+      <div class="sr-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Домен</th>
+              <th>Приоритет</th>
+              <th>Статус</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+
+          <tbody id="ruDirectRulesBody"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- My exceptions -->
+
+  <div id="srGroupMy"
+       class="card sr-group">
+
+    <div class="sr-group-head">
+
+      <div>
+
+        <div class="label">Мои исключения</div>
+
+        <div class="sr-group-title">
+          <h3>Ваши адреса и домены</h3>
+
+          <span id="myExceptionsCount"
+                class="sr-group-count">
+            0
+          </span>
+        </div>
+
+        <div class="muted sr-group-subtitle">
+          Правила, добавленные вручную
+        </div>
+
+      </div>
+
+      <div class="routing-group-action" style="padding:10px 18px 0;">
+  <label class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;">
+    Импортировать из файла
+    <input
+      id="smartImportFile"
+      type="file"
+      accept=".txt,.csv,text/plain,text/csv"
+      hidden
+      onchange="handleSmartImportChange(this)"
+    >
+  </label>
+
+  <div class="muted" style="margin-top:6px;line-height:1.45;">
+    TXT: ресурс[TAB]комментарий · CSV: resource,comment
+  </div>
+
+  <div
+    id="smartImportPreview"
+    style="display:none;margin-top:10px;"
+  ></div>
+</div>
+
+      <button class="btn ghost sr-group-toggle"
+              id="myToggle"
+              aria-expanded="false"
+              onclick="toggleSmartGroup('my')">
+        ▸
+      </button>
+
+
+    </div>
+
+    <div id="myBody"
+         class="sr-group-body"
+         style="display:none;">
+
+      <div class="sr-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Тип</th>
+              <th>Цель</th>
+              <th>Приоритет</th>
+              <th>Статус</th>
+              <th>Комментарий</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+
+          <tbody id="rulesBody"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- Diagnostics -->
+
+  <div id="srGroupDiagnostic"
+       class="card sr-group">
+
+    <div class="sr-group-head">
+
+      <div>
+
+        <div class="label">Диагностика</div>
+
+        <div class="sr-group-title">
+          <h3>Ресурсы, добавленные из диагностики</h3>
+
+          <span id="diagnosticGroupCount"
+                class="sr-group-count">
+            0
+          </span>
+        </div>
+
+        <div id="diagnosticGroupSubtitle"
+             class="muted sr-group-subtitle">
+          0 ресурсов
+        </div>
+
+      </div>
+
+      <button class="btn ghost sr-group-toggle"
+              id="diagnosticToggle"
+              aria-expanded="false"
+              onclick="toggleSmartGroup('diagnostic')">
+        ▸
+      </button>
+
+    </div>
+
+    <div id="diagnosticGroups"
+         class="sr-group-body sr-resource-groups"
+         style="display:none;">
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ========================================================
+     RUNTIME
+     ======================================================== -->
+
+<div class="grid4"
+     style="margin-top:16px">
+
+  <div class="card">
+    <div class="label">Правила</div>
+    <div class="big"
+         id="rtRuleCount">
+      —
+    </div>
+    <div class="muted"
+         id="rtRuleSub">
+      —
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">DIRECT IP</div>
+    <div class="big"
+         id="rtDirectCount">
+      —
+    </div>
+    <div class="muted">
+      MAXVPN_DIRECT
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Static IP</div>
+    <div class="big"
+         id="rtStaticCount">
+      —
+    </div>
+    <div class="muted">
+      MAXVPN_DIRECT_STATIC
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Mangle</div>
+    <div class="big"
+         id="rtMangle">
+      —
+    </div>
+    <div class="muted">
+      канонические правила
+    </div>
+  </div>
+
+</div>
+
+<div class="card"
+     style="margin-top:16px">
+
+  <div class="label">Runtime</div>
+
+  <div class="mono"
+       id="routingRuntime">
+    —
+  </div>
+
+</div>
+
+</section>
+
+<section id="devices" class="section"><div class="card"><div class="label">Устройства</div><h2>Клиенты локальной сети</h2><p class="muted">Этот раздел подключим к данным DHCP/ARP следующей итерацией. Интерфейс и API-контракт уже зарезервированы.</p></div></section>
+<section id="dns" class="section">
+  <div class="grid2">
+    <div class="card">
+      <div class="label">DNS SERVICE</div>
+      <div class="big" id="dnsStatus">Загрузка…</div>
+      <p class="muted">Локальный DNS · dnsmasq</p>
+      <div class="rows">
+        <div class="row">
+          <span>DNS rebind protection</span>
+          <b id="dnsRebind">—</b>
+        </div>
+        <div class="row">
+          <span>Файл upstream</span>
+          <b id="dnsResolvFile">—</b>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Локальное имя MaxVPN</div>
+      <div class="big">maxvpn.lan</div>
+      <p class="muted">192.168.8.1</p>
+      <p class="muted">
+        Значения указаны в конфигурации интерфейса.
+        Проверка локальной DNS-записи появится отдельно.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="route-head">
+      <div>
+        <div class="label">DNS UPSTREAM</div>
+        <h2>Серверы DNS</h2>
+        <p class="muted">
+          Настроенные серверы и расчётные маршруты.
+          Фактический активный сервер пока не определяется.
+        </p>
+      </div>
+      <button class="btn ghost"
+              onclick="refreshDnsStatus()">
+        Обновить
+      </button>
+    </div>
+    <div class="sr-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>DNS-сервер</th>
+            <th>Источник</th>
+            <th>Маршрут</th>
+            <th>Интерфейс</th>
+          </tr>
+        </thead>
+        <tbody id="dnsUpstreams">
+          <tr><td colspan="4">Загрузка…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" id="dnsUpdated">—</p>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="label">ДИАГНОСТИКА DNS</div>
+    <p class="muted" id="dnsWarnings">
+      Ожидание данных…
+    </p>
+  </div>
+</section>
+<section id="system" class="section"><div class="grid2"><div class="card"><div class="label">Brume 3</div><div class="rows" id="sysBoard"></div></div><div class="card"><div class="label">Appliance</div><div class="rows" id="sysApp"></div></div></div></section>
+</main></div>
+<script>
+
+const RUSSIA_DIRECT_DOMAINS = new Set([
+  "gosuslugi.ru",
+  "vk.com",
+  "mail.ru",
+  "max.ru",
+  "rustore.ru",
+  "rutube.ru",
+  "ok.ru",
+  "sber.ru",
+  "tbank.ru",
+  "alfabank.ru",
+  "vtb.ru",
+  "wildberries.ru",
+  "ozon.ru",
+  "lamoda.ru",
+  "megamarket.ru",
+  "avito.ru",
+  "samokat.ru",
+  "vkusvill.ru",
+  "lenta.com",
+  "magnit.ru",
+  "kinopoisk.ru",
+  "ivi.ru",
+  "start.ru",
+  "kion.ru",
+  "wink.ru",
+  "2gis.ru",
+  "hh.ru",
+  "browser.yandex.ru",
+  "yandex.ru",
+  "pay.yandex.ru",
+  "litres.ru",
+  "rzd.ru",
+  "cian.ru",
+  "vkvideo.ru",
+  "5ka.ru",
+  "lemanapro.ru",
+  "cdek.ru",
+]);
+
+const state={status:null,routing:null,vless:null,vlessDelays:{},vlessDelayHistory:{},vlessSelectionHistory:null,vlessSelectionHistoryError:null,vlessHistoryExpanded:false,vlessHistoryVisibleCount:5,vlessProfilesExpanded:false,vlessBusy:false,vlessError:null,dirty:false,diagnostic:null,diagnosticTimer:null,smartImportFile:null,smartImportPreview:null,smartImportContent:''};
+const $=id=>document.getElementById(id);
+async function api(path,opts={}){const r=await fetch(path,{cache:'no-store',headers:{'Content-Type':'application/json',...(opts.headers||{})},...opts});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||`HTTP ${r.status}`);return data;}
+function row(k,v){return `<div class="row"><span>${k}</span><b>${v??'—'}</b></div>`}
+async function refreshAll(){
+  try{
+    state.status=await api('/api/appliance/v1/status');
+    state.routing=await api('/api/appliance/v1/routing');
+    state.dirty=!!state.routing.runtime?.config_dirty;
+  }catch(e){
+    console.error(e);
+  }
+
+  try{
+    state.vless=await api('/api/appliance/v1/vless');
+    state.vlessError=null;
+  }catch(e){
+    state.vlessError=e.message||'Не удалось получить состояние VLESS';
+  }
+
+  if(state.vless){
+    try{
+      const history=await api('/api/appliance/v1/vless/delays/history');
+      applyVlessDelayHistory(history.results||[],true);
+    }catch(e){
+      console.warn('VLESS delay history unavailable',e);
+    }
+
+    try{
+      state.vlessSelectionHistory=await api('/api/appliance/v1/vless/selection-history');
+      state.vlessSelectionHistoryError=null;
+    }catch(e){
+      state.vlessSelectionHistoryError=e.message||'Журнал переключений недоступен';
+    }
+  }
+
+  render();
+}
+async function refreshRouting(){state.routing=await api('/api/appliance/v1/routing');state.dirty=!!state.routing.runtime?.config_dirty;}
+function render(){
+  const s=state.status||{};
+  const v=s.vpn||{};
+  const b=s.board||{};
+  const rt=s.smart_routing||{};
+  const r=state.routing||{};
+  const tr=v.transfer||{};
+  const vl=state.vless||{};
+  const mode=vl.traffic_mode||s.traffic_mode||'unknown';
+  const labels={wan:'WAN',vpn:'AmneziaWG',vless:'VLESS + REALITY',unknown:'Не определён'};
+  const enabledRules=(r.rules||[]).filter(rule=>rule.enabled).length;
+  const activeTag=String(vl.active_outbound||'');
+  const activeId=activeTag.match(/^vless-profile-([1-9][0-9]*)$/);
+  const profiles=Array.isArray(vl.profiles)?vl.profiles:[];
+  const activeProfile=activeId?profiles.find(profile=>Number(profile.id)===Number(activeId[1])):null;
+  const activeAddress=vl.active_server_address?`${vl.active_server_address}:${vl.active_server_port||'—'}`:activeProfile?`${activeProfile.address}:${activeProfile.port}`:'';
+  const country=activeProfile?vlessCountry(activeProfile):null;
+  const activeServerLabel=activeProfile
+    ? `${country.flag} ${country.name}`
+    : (activeAddress||'Не определён');
+  const activeServerDetail=activeAddress||'После запуска URLTest активный сервер появится здесь.';
+  const processLabel=vl.running?'Запущен':vl.installed?'Остановлен':'Не установлен';
+  const routeHealthy=mode==='vless'&&vl.lan_route_healthy===true;
+  const directNotice=state.dirty
+    ? 'Есть неприменённые изменения Smart Routing. Текущие runtime-правила могут отличаться от списка; нажмите «Применить».'
+    : 'Активные DIRECT-правила Smart Routing направляют совпадающие ресурсы напрямую через WAN.';
+
+  $('ovVpn').textContent=labels[mode]||labels.unknown;
+  if(mode==='vpn'){
+    $('ovMetric2Label').textContent='Handshake';
+    $('ovHs').textContent=v.latest_handshake||'Нет данных';
+    $('ovMetric2Help').textContent='Последняя связь AmneziaWG';
+    $('ovMetric3Label').textContent='Получено';
+    $('ovRx').textContent=tr.received||'Нет данных';
+    $('ovMetric3Help').textContent='Входящий трафик AmneziaWG';
+    $('ovMetric4Label').textContent='Отправлено';
+    $('ovTx').textContent=tr.sent||'Нет данных';
+    $('ovMetric4Help').textContent='Исходящий трафик AmneziaWG';
+  }else if(mode==='vless'){
+    $('ovMetric2Label').textContent='Состояние VLESS';
+    $('ovHs').textContent=routeHealthy?'sing-box + TUN OK':'Проверить';
+    $('ovMetric2Help').textContent='Процесс и интерфейс, не проверка доступа к сайтам';
+    $('ovMetric3Label').textContent='Текущий сервер';
+    $('ovRx').innerHTML=activeProfile?`<span class="vless-country-label">${vlessCountryFlagHtml(activeProfile)}<span class="vless-country-label-text">${vlessEscape(country.name)}</span></span>`:vlessEscape(activeServerLabel);
+    $('ovMetric3Help').textContent=activeServerDetail;
+    let latencyNode=$('ovMetric3Latency');
+    if(!latencyNode){
+      latencyNode=document.createElement('div');
+      latencyNode.id='ovMetric3Latency';
+      latencyNode.style.marginTop='4px';
+      latencyNode.style.fontSize='12px';
+      latencyNode.style.fontWeight='650';
+      latencyNode.style.color='#71809a';
+      latencyNode.style.fontVariantNumeric='tabular-nums';
+      latencyNode.style.minHeight='15px';
+      $('ovMetric3Help').insertAdjacentElement('afterend',latencyNode);
+    }
+    const current=state.vlessSelectionHistory?.current||null;
+    const runtimeTag=state.vless?.running?String(state.vless?.active_outbound||''):'';
+    const measurementTag=String(current?.active_outbound||'');
+    const rawDelay=current?.active_delay_ms;
+    const delay=rawDelay!==null&&rawDelay!==undefined&&Number.isFinite(Number(rawDelay))&&Number(rawDelay)>0?Math.round(Number(rawDelay)):null;
+    latencyNode.hidden=!activeProfile;
+    latencyNode.textContent=activeProfile&&runtimeTag&&runtimeTag===measurementTag&&delay!==null?`Пинг ${delay}`:'—';
+    $('ovMetric4Label').textContent='LAN через VLESS';
+    $('ovTx').textContent=routeHealthy?'Включён':'Проверить';
+    $('ovMetric4Help').textContent=state.dirty?'Smart Routing требует применения':'DIRECT-исключения идут через WAN';
+  }else if(mode==='wan'){
+    $('ovMetric2Label').textContent='VPN-туннель';
+    $('ovHs').textContent='Не используется';
+    $('ovMetric2Help').textContent='Прямой доступ через WAN';
+    $('ovMetric3Label').textContent='Основной маршрут';
+    $('ovRx').textContent='WAN';
+    $('ovMetric3Help').textContent=rt.wan_gateway?`Шлюз ${rt.wan_gateway}`:'Прямое соединение';
+    $('ovMetric4Label').textContent='DIRECT-правила';
+    $('ovTx').textContent=String(enabledRules);
+    $('ovMetric4Help').textContent='Сохранённых активных правил';
+  }else{
+    $('ovMetric2Label').textContent='Состояние VPN';
+    $('ovHs').textContent='Не определено';
+    $('ovMetric2Help').textContent='Обновите состояние';
+    $('ovMetric3Label').textContent='Текущий сервер';
+    $('ovRx').textContent='—';
+    $('ovMetric3Help').textContent='Нет подтверждённых данных';
+    $('ovMetric4Label').textContent='Маршрут LAN';
+    $('ovTx').textContent='Неизвестен';
+    $('ovMetric4Help').textContent='Проверьте runtime-mode';
+  }
+
+  const escapedActiveAddress=vlessEscape(activeAddress||'Не определён');
+  const escapedActiveLabel=vlessEscape(activeServerLabel);
+  if(mode==='vless'){
+    $('ovVpnRows').innerHTML=
+      row('Режим LAN',labels.vless)+
+      row('Интерфейс TUN',vl.interface||'maxvpn0')+
+      row('Текущий сервер',`${escapedActiveLabel} · ${escapedActiveAddress}`)+
+      row('Процесс sing-box',processLabel)+
+      row('sing-box + TUN',routeHealthy?'OK':'Не подтверждено');
+    $('vpnDetailsTitle').textContent='VLESS + REALITY · состояние маршрута';
+    $('vpnRows').innerHTML=
+      row('Режим LAN',labels.vless)+
+      row('Процесс sing-box',processLabel)+
+      row('Интерфейс TUN',vl.interface||'maxvpn0')+
+      row('Текущий сервер',`${escapedActiveLabel} · ${escapedActiveAddress}`)+
+      row('Режим выбора',vl.selection_mode==='manual'?'Выбран вручную':vl.selection_mode==='auto'?'Автовыбор':'Не определён')+
+      row('sing-box + TUN',routeHealthy?'OK':'Не подтверждено')+
+      row('Статистика трафика','Пока не собирается для VLESS');
+  }else if(mode==='vpn'){
+    $('ovVpnRows').innerHTML=
+      row('Режим LAN',labels.vpn)+
+      row('Интерфейс AmneziaWG',v.interface||'—')+
+      row('Endpoint',v.endpoint||'—')+
+      row('Handshake',v.latest_handshake||'Нет данных');
+    $('vpnDetailsTitle').textContent='AmneziaWG · состояние интерфейса';
+    $('vpnRows').innerHTML=
+      row('Режим LAN',labels.vpn)+
+      row('Интерфейс',v.interface||'—')+
+      row('Порт',v.listening_port||'—')+
+      row('Endpoint',v.endpoint||'—')+
+      row('Handshake',v.latest_handshake||'Нет данных')+
+      row('Получено',tr.received||'Нет данных')+
+      row('Отправлено',tr.sent||'Нет данных');
+  }else if(mode==='wan'){
+    $('ovVpnRows').innerHTML=
+      row('Режим LAN','WAN напрямую')+
+      row('VPN-туннель','Не используется')+
+      row('WAN-интерфейс',rt.wan_interface||'—')+
+      row('Шлюз WAN',rt.wan_gateway||'—');
+    $('vpnDetailsTitle').textContent='WAN · состояние прямого подключения';
+    $('vpnRows').innerHTML=
+      row('Режим LAN','WAN напрямую')+
+      row('VPN-туннель','Не используется')+
+      row('WAN-интерфейс',rt.wan_interface||'—')+
+      row('Шлюз WAN',rt.wan_gateway||'—')+
+      row('DIRECT-исключения',`${enabledRules} активных правил сохранено`)+
+      row('sing-box',vl.running?'Запущен, но не выбран':'Не используется');
+  }else{
+    $('ovVpnRows').innerHTML=row('Режим LAN','Не определён')+row('Состояние','Нет подтверждённых данных');
+    $('vpnDetailsTitle').textContent='Состояние VPN / маршрута';
+    $('vpnRows').innerHTML=row('Режим LAN','Не определён')+row('Состояние','Обновите состояние и проверьте runtime-mode');
+  }
+
+  $('ovRouteRows').innerHTML=
+    row('DIRECT policy','100 → table 200')+
+    row('Таблица','200')+
+    row('WAN',rt.wan_interface||'—')+
+    row('Gateway',rt.wan_gateway||'—')+
+    row('Smart Routing',state.dirty?'Есть неприменённые изменения':`${enabledRules} активных правил`);
+  $('srModeNote').textContent=mode==='vless'
+    ? `Основной маршрут LAN — VLESS + REALITY. ${directNotice} IPv6-трафик LAN блокируется до отдельной реализации и проверки.`
+    : mode==='vpn'
+      ? `Основной маршрут LAN — AmneziaWG. ${directNotice}`
+      : mode==='wan'
+        ? `Основной маршрут LAN — WAN напрямую. ${state.dirty?'Есть неприменённые изменения Smart Routing.':'Правила Smart Routing сохранены и остаются доступными при возврате к VPN-режиму.'}`
+        : 'Основной маршрут LAN не удалось определить. Обновите состояние перед изменением маршрутизации.';
+
+  $('routingRuntime').textContent=[rt.ip_rule||'',rt.table_200||''].join('\n\n');
+  $('rtRuleCount').textContent=(r.rules||[]).length;
+  $('rtRuleSub').textContent=`включено ${enabledRules}`;
+  $('rtDirectCount').textContent=rt.direct_ipset?'OK':'—';
+  $('rtStaticCount').textContent=rt.static_ipset?'OK':'—';
+  $('rtMangle').textContent=`${rt.mangle_direct_count||0}/${rt.mangle_static_count||0}`;
+  $('dirtyBadge').style.display=state.dirty?'inline-flex':'none';
+  $('applyBtn').disabled=state.dirty===false&&false;
+  renderRuleGroups();
+  renderVless();
+  $('sysBoard').innerHTML=row('Модель',b.model||'GL.iNet GL-MT5000')+row('OpenWrt',b.release?.description||b.release?.version)+row('Kernel',b.kernel)+row('Python',s.python);
+  $('sysApp').innerHTML=row('Статус',s.status)+row('Uptime',`${Math.floor((s.uptime_seconds||0)/60)} мин`)+row('Hostname',b.hostname)+row('Endpoint','maxvpn.lan');
+}
+function filteredRules(){const q=($('rtSearch')?.value||'').trim().toLowerCase();const rules=state.routing?.rules||[];return q?rules.filter(x=>String(x.target).toLowerCase().includes(q)||String(x.target_type).toLowerCase().includes(q)||String(x.priority).includes(q)):rules}
+function ruleNumber(id){const all=state.routing?.rules||[];return Math.max(0,all.findIndex(r=>r.id===id))+1}
+function normalizeRuleTarget(rule){
+  return String(rule?.target||'')
+    .trim()
+    .toLowerCase()
+    .replace(/\.$/,'');
+}
+
+function isDiagnosticRule(rule){
+  return /^Диагностика\s*:/i.test(String(rule?.comment||'').trim());
+}
+
+function diagnosticSite(rule){
+  let value=String(
+    rule?.comment||''
+  )
+    .replace(
+      /^Диагностика\s*:\s*/i,
+      ''
+    )
+    .trim();
+
+  value=value.replace(
+    /\s+\[MaxVPN:[^\]]+\]\s*$/i,
+    ''
+  );
+
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\.$/,'');
+}
+
+function diagnosticProvenance(rule){
+  const comment=String(
+    rule?.comment||''
+  );
+
+  const match=comment.match(
+    /\[MaxVPN:([^:\]]+):([a-f0-9]{8,64})\]/i
+  );
+
+  if(!match){
+    return null;
+  }
+
+  return {
+    version:match[1],
+    token:match[2]
+  };
+}
+
+function isLegacyDiagnosticRule(rule){
+  return isDiagnosticRule(rule)
+    && !diagnosticProvenance(rule);
+}
+
+function diagnosticRuleLabel(rule){
+  const provenance=
+    diagnosticProvenance(rule);
+
+  if(!provenance){
+    return {
+      text:'Старое правило',
+      legacy:true
+    };
+  }
+
+  return {
+    text:
+      `MaxVPN ${provenance.version} · `+
+      `запуск ${provenance.token.slice(0,8)}`,
+    legacy:false
+  };
+}
+
+async function deleteLegacyDiagnosticGroup(site){
+  const all=state.routing?.rules||[];
+
+  const legacy=all.filter(
+    rule =>
+      isLegacyDiagnosticRule(rule)
+      && (
+        diagnosticSite(rule)
+        || 'Диагностика'
+      ) === site
+  );
+
+  if(!legacy.length){
+    return;
+  }
+
+  const names=legacy
+    .map(rule=>rule.target)
+    .join(', ');
+
+  const confirmed=confirm(
+    `Удалить устаревшие диагностические правила `+
+    `для ${site}?\n\n`+
+    `${names}\n\n`+
+    `Будут удалены только правила без идентификатора `+
+    `запуска MaxVPN.`
+  );
+
+  if(!confirmed){
+    return;
+  }
+
+  let deleted=0;
+  let failed=0;
+
+  for(const rule of legacy){
+    try{
+      await api(
+        '/api/appliance/v1/routing/rules/'+rule.id,
+        {
+          method:'DELETE'
+        }
+      );
+
+      deleted++;
+    }catch(e){
+      failed++;
+      console.error(
+        'Diagnostic cleanup failed:',
+        rule.id,
+        e
+      );
+    }
+  }
+
+  await refreshAll();
+
+  let message=
+    `Очистка ${site}: удалено ${deleted}`;
+
+  if(failed){
+    message+=
+      `, ошибок ${failed}`;
+  }
+
+  setDiagNotice(message);
+}
+
+
+function diagnosticStatus(rule){
+  const verification =
+    rule?.diagnostic_verification || null;
+
+  if(
+    verification &&
+    verification.status === 'confirmed'
+  ){
+    const checkedAt =
+      verification.checked_at
+        ? new Date(
+            verification.checked_at * 1000
+          ).toLocaleString()
+        : '';
+
+    const evidence =
+      (verification.evidence_hosts || [])
+        .slice(0, 6)
+        .join(', ');
+
+    return {
+      kind: 'confirmed',
+      text: 'Подтверждено текущей диагностикой',
+      detail:
+        `MaxVPN ${verification.diagnostic_version || ''}` +
+        (
+          verification.diagnostic_token
+            ? ` · запуск ${String(
+                verification.diagnostic_token
+              ).slice(0, 8)}`
+            : ''
+        ) +
+        (
+          checkedAt
+            ? ` · ${checkedAt}`
+            : ''
+        ),
+      evidence
+    };
+  }
+
+  if(
+    verification &&
+    verification.status === 'not_confirmed'
+  ){
+    const checkedAt =
+      verification.checked_at
+        ? new Date(
+            verification.checked_at * 1000
+          ).toLocaleString()
+        : '';
+
+    return {
+      kind: 'not_confirmed',
+      text: 'Не подтверждено последней диагностикой',
+      detail:
+        `MaxVPN ${verification.diagnostic_version || ''}` +
+        (
+          checkedAt
+            ? ` · ${checkedAt}`
+            : ''
+        ),
+      evidence: ''
+    };
+  }
+
+  if(
+    typeof diagnosticProvenance === 'function'
+  ){
+    const provenance =
+      diagnosticProvenance(rule);
+
+    if(provenance){
+      return {
+        kind: 'managed',
+        text:
+          `Создано MaxVPN ${provenance.version}`,
+        detail:
+          provenance.token
+            ? `запуск ${provenance.token}`
+            : '',
+        evidence: ''
+      };
+    }
+  }
+
+  return {
+    kind: 'legacy',
+    text: 'Историческое правило',
+    detail:
+      'Создано до введения идентификатора запуска',
+    evidence: ''
+  };
+}
+
+function isRuDirectRule(rule){
+  return rule?.target_type === 'domain'
+    && RUSSIA_DIRECT_DOMAINS.has(normalizeRuleTarget(rule));
+}
+
+function ruleTypeLabel(rule){
+  return rule?.target_type === 'cidr' ? 'IP/CIDR' : 'Домен';
+}
+
+function ruleFamilyLabel(rule){
+  return rule?.target_type === 'cidr' ? 'IPv4' : 'IPv4 + IPv6';
+}
+
+function ruleMeta(rule){
+  return `${ruleTypeLabel(rule)} · ${ruleFamilyLabel(rule)} · приоритет ${rule.priority}`;
+}
+
+function ruleActionCells(rule){
+  return `
+    <div class="sr-rule-actions">
+      <button class="btn ghost sr-rule-edit"
+              onclick="editRule(${rule.id})">
+        Изменить
+      </button>
+
+      <button
+        class="sr-rule-switch ${rule.enabled ? 'switch-on' : ''}"
+        onclick="toggleRule(${rule.id},${!rule.enabled})"
+        title="${rule.enabled ? 'Выключить правило' : 'Включить правило'}"
+        aria-label="${rule.enabled ? 'Выключить правило' : 'Включить правило'}"
+        aria-pressed="${rule.enabled ? 'true' : 'false'}"
+      >
+        <span></span>
+      </button>
+
+      <button
+        class="btn ghost sr-rule-test"
+        onclick="testRule(${rule.id},this)"
+        title="Проверить фактический маршрут"
+        aria-label="Проверить фактический маршрут"
+      >
+        Проверить
+      </button>
+
+      <button
+        class="sr-rule-delete"
+        onclick="deleteRule(${rule.id})"
+        title="Удалить правило"
+        aria-label="Удалить правило"
+      >
+        ×
+      </button>
+    </div>
+  `;
+}
+
+function smartRuleSearch(rules){
+  const q = ($('rtSearch')?.value || '').trim().toLowerCase();
+
+  if(!q){
+    return rules;
+  }
+
+  return rules.filter(rule =>
+    String(rule.target||'').toLowerCase().includes(q)
+    || String(rule.target_type||'').toLowerCase().includes(q)
+    || String(rule.priority||'').includes(q)
+    || String(rule.comment||'').toLowerCase().includes(q)
+  );
+}
+
+
+function smartSearchTargetMatched(rule,query){
+
+  const q =
+    String(query || '')
+      .trim()
+      .toLowerCase();
+
+  if(!q){
+    return false;
+  }
+
+  return String(rule?.target || '')
+    .toLowerCase()
+    .includes(q);
+}
+
+
+function smartSearchHighlightTarget(value,query){
+
+  const valueText =
+    String(value ?? '');
+
+  const queryText =
+    String(query ?? '').trim();
+
+  if(!queryText){
+    return esc(valueText);
+  }
+
+  const index =
+    valueText
+      .toLowerCase()
+      .indexOf(
+        queryText.toLowerCase()
+      );
+
+  if(index < 0){
+    return esc(valueText);
+  }
+
+  return (
+    esc(
+      valueText.slice(
+        0,
+        index
+      )
+    ) +
+
+    '<mark>' +
+
+    esc(
+      valueText.slice(
+        index,
+        index + queryText.length
+      )
+    ) +
+
+    '</mark>' +
+
+    esc(
+      valueText.slice(
+        index + queryText.length
+      )
+    )
+  );
+}
+
+
+/*
+ * Старое имя сохраняем для совместимости
+ * с существующим renderer диагностики.
+ */
+function diagnosticHighlightTarget(
+  value,
+  query
+){
+  return smartSearchHighlightTarget(
+    value,
+    query
+  );
+}
+
+
+function renderRuDirectRules(rules){
+
+  const body =
+    $('ruDirectRulesBody');
+
+  if(!body){
+    return;
+  }
+
+  const source =
+    Array.isArray(rules)
+      ? rules
+      : [];
+
+  const rows =
+    smartRuleSearch(source);
+
+  const query =
+    ($('rtSearch')?.value || '')
+      .trim();
+
+  if(!rows.length){
+
+    body.innerHTML =
+      query
+        ? '<tr><td colspan="5" class="muted">По запросу ничего не найдено.</td></tr>'
+        : '<tr><td colspan="5" class="muted">Российские сервисы пока не импортированы.</td></tr>';
+
+    return;
+  }
+
+  body.innerHTML =
+    rows.map(
+      (rule,index) => {
+
+        const matched =
+          smartSearchTargetMatched(
+            rule,
+            query
+          );
+
+        return `
+          <tr
+            id="rule-${rule.id}"
+            class="${
+              matched
+                ? 'smart-search-hit'
+                : ''
+            }"
+          >
+            <td>${index + 1}</td>
+
+            <td>
+              ${smartSearchHighlightTarget(
+                rule.target,
+                query
+              )}
+            </td>
+
+            <td>${rule.priority}</td>
+
+            <td class="${rule.enabled?'ok':'warn'}">
+              ${rule.enabled?'Включено':'Выключено'}
+            </td>
+
+            <td class="actions-cell">
+              ${ruleActionCells(rule)}
+            </td>
+          </tr>
+        `;
+      }
+    ).join('');
+}
+
+
+
+function toggleSmartGroup(kind){
+
+  const groups = {
+
+    ruDirect:{
+      body:'ruDirectBody',
+      toggle:'ruDirectToggle'
+    },
+
+    my:{
+      body:'myBody',
+      toggle:'myToggle'
+    },
+
+    diagnostic:{
+      body:'diagnosticGroups',
+      toggle:'diagnosticToggle'
+    }
+  };
+
+  const config =
+    groups[kind];
+
+  if(!config){
+    return;
+  }
+
+  const body =
+    $(config.body);
+
+  const button =
+    $(config.toggle);
+
+  if(!body || !button){
+    return;
+  }
+
+  window.__maxvpnSmartGroupOpen =
+    window.__maxvpnSmartGroupOpen || {};
+
+  const current =
+    Object.prototype.hasOwnProperty.call(
+      window.__maxvpnSmartGroupOpen,
+      kind
+    )
+      ? Boolean(
+          window.__maxvpnSmartGroupOpen[kind]
+        )
+      : (
+          button.getAttribute(
+            'aria-expanded'
+          ) === 'true'
+        );
+
+  const open =
+    !current;
+
+  window.__maxvpnSmartGroupOpen[kind] =
+    open;
+
+  body.style.display =
+    open ? '' : 'none';
+
+  button.setAttribute(
+    'aria-expanded',
+    open ? 'true' : 'false'
+  );
+
+  button.textContent =
+    open ? '▾' : '▸';
+
+  if(kind === 'diagnostic'){
+
+    const secondary =
+      $('diagnosticResourcesToggle');
+
+    if(secondary){
+
+      secondary.style.display =
+        'inline-flex';
+
+      secondary.textContent =
+        open
+          ? 'Скрыть найденные ресурсы'
+          : 'Показать найденные ресурсы';
+
+      secondary.setAttribute(
+        'aria-expanded',
+        open ? 'true' : 'false'
+      );
+    }
+  }
+}
+
+
+
+
+
+
+function toggleDiagnosticResources(){
+  toggleSmartGroup('diagnostic');
+}
+
+
+
+
+function toggleDiagnosticGroup(index,site){
+  const body =
+    $('diagnostic-group-body-' + index);
+
+  const button =
+    $('diagnostic-group-toggle-' + index);
+
+  if(!body || !button){
+    return;
+  }
+
+  window.__maxvpnDiagnosticGroupHidden =
+    window.__maxvpnDiagnosticGroupHidden || {};
+
+  const hidden =
+    !Boolean(
+      window.__maxvpnDiagnosticGroupHidden[site]
+    );
+
+  window.__maxvpnDiagnosticGroupHidden[site] =
+    hidden;
+
+  body.style.display =
+    hidden ? 'none' : '';
+
+  button.textContent =
+    hidden
+      ? 'Показать добавленные ресурсы'
+      : 'Скрыть добавленные ресурсы';
+
+  button.setAttribute(
+    'aria-expanded',
+    hidden ? 'false' : 'true'
+  );
+}
+
+
+
+
+function renderDiagnosticGroups(rules){
+  const box = $('diagnosticGroups');
+  const globalToggle =
+    $('diagnosticResourcesToggle');
+
+  if(!box){
+    return;
+  }
+
+  const source =
+    Array.isArray(rules)
+      ? rules.filter(isDiagnosticRule)
+      : [];
+
+  const diagnosticQuery =
+    ($('rtSearch')?.value || '')
+      .trim();
+
+  const rows =
+    source;
+
+  const statuses =
+    source.map(diagnosticStatus);
+
+  const confirmed =
+    statuses.filter(
+      x => x.kind === 'confirmed'
+    ).length;
+
+  const notConfirmed =
+    statuses.filter(
+      x => x.kind === 'not_confirmed'
+    ).length;
+
+  const managed =
+    statuses.filter(
+      x => x.kind === 'managed'
+    ).length;
+
+  const legacy =
+    statuses.filter(
+      x => x.kind === 'legacy'
+    ).length;
+
+  if(globalToggle){
+
+    const primary =
+      $('diagnosticToggle');
+
+    const open =
+      primary
+        ? primary.getAttribute(
+            'aria-expanded'
+          ) === 'true'
+        : false;
+
+    globalToggle.style.display =
+      source.length
+        ? 'inline-flex'
+        : 'none';
+
+    globalToggle.textContent =
+      open
+        ? 'Скрыть найденные ресурсы'
+        : 'Показать найденные ресурсы';
+
+    globalToggle.setAttribute(
+      'aria-expanded',
+      open ? 'true' : 'false'
+    );
+
+    /*
+     * Видимость основной области здесь
+     * НЕ меняется.
+     */
+  }
+
+  if(!rows.length){
+    box.innerHTML = `
+      <div class="diagnostic-empty">
+        Диагностические ресурсы пока не найдены.
+      </div>
+    `;
+    return;
+  }
+
+  const groups = new Map();
+
+  rows.forEach(rule => {
+    const site =
+      diagnosticSite(rule) ||
+      'неизвестный ресурс';
+
+    if(!groups.has(site)){
+      groups.set(site, []);
+    }
+
+    groups.get(site).push(rule);
+  });
+
+
+  const visibleGroups =
+    diagnosticQuery
+      ? Array.from(
+          groups.entries()
+        ).filter(
+          ([site,groupRules]) =>
+            groupRules.some(
+              rule =>
+                String(
+                  rule.target || ''
+                )
+                  .toLowerCase()
+                  .includes(
+                    diagnosticQuery.toLowerCase()
+                  )
+              ||
+                String(
+                  rule.target_type || ''
+                )
+                  .toLowerCase()
+                  .includes(
+                    diagnosticQuery.toLowerCase()
+                  )
+              ||
+                String(
+                  rule.priority || ''
+                ).includes(
+                  diagnosticQuery
+                )
+              ||
+                String(
+                  rule.comment || ''
+                )
+                  .toLowerCase()
+                  .includes(
+                    diagnosticQuery.toLowerCase()
+                  )
+            )
+        )
+      : Array.from(
+          groups.entries()
+        );
+
+const statusLabel = {
+    confirmed: 'ПОДТВЕРЖДЕНО',
+    not_confirmed: 'НЕ ПОДТВЕРЖДЕНО',
+    managed: 'СОЗДАНО MAXVPN',
+    legacy: 'ИСТОРИЧЕСКОЕ'
+  };
+
+  const statusClass = {
+    confirmed: 'confirmed',
+    not_confirmed: 'not-confirmed',
+    managed: 'managed',
+    legacy: 'legacy'
+  };
+
+  box.innerHTML = `
+    <div class="diagnostic-overview">
+
+      <div class="diagnostic-overview-main">
+        <div>
+          <div class="diagnostic-overview-title">
+            Найденные диагностикой ресурсы
+          </div>
+
+          <div class="diagnostic-overview-value">
+            ${source.length}
+          </div>
+
+          <div class="diagnostic-overview-caption">
+            Ресурсы, связанные с наблюдавшейся
+            загрузкой сайтов
+          </div>
+        </div>
+
+        <div class="diagnostic-group-count">
+          Групп:
+          <strong>${groups.size}</strong>
+        </div>
+      </div>
+
+      <div class="diagnostic-stat confirmed">
+        <div class="diagnostic-stat-label">
+          Подтверждено
+        </div>
+        <div class="diagnostic-stat-value">
+          ${confirmed}
+        </div>
+      </div>
+
+      <div class="diagnostic-stat not-confirmed">
+        <div class="diagnostic-stat-label">
+          Не подтверждено
+        </div>
+        <div class="diagnostic-stat-value">
+          ${notConfirmed}
+        </div>
+      </div>
+
+      <div class="diagnostic-stat managed">
+        <div class="diagnostic-stat-label">
+          Создано MaxVPN
+        </div>
+        <div class="diagnostic-stat-value">
+          ${managed}
+        </div>
+      </div>
+
+      <div class="diagnostic-stat">
+        <div class="diagnostic-stat-label">
+          Исторические
+        </div>
+        <div class="diagnostic-stat-value">
+          ${legacy}
+        </div>
+      </div>
+
+    </div>
+
+    ${
+      visibleGroups.map(
+          ([site, groupRules], groupIndex) => {
+
+            const groupStatuses =
+              groupRules.map(diagnosticStatus);
+
+            const groupConfirmed =
+              groupStatuses.filter(
+                x => x.kind === 'confirmed'
+              ).length;
+
+            const groupNotConfirmed =
+              groupStatuses.filter(
+                x => x.kind === 'not_confirmed'
+              ).length;
+
+            window.__maxvpnDiagnosticGroupHidden =
+              window.__maxvpnDiagnosticGroupHidden || {};
+
+            if(
+              typeof window.__maxvpnDiagnosticGroupHidden[site] ===
+              'undefined'
+            ){
+              window.__maxvpnDiagnosticGroupHidden[site] = true;
+            }
+
+            const groupHidden =
+              Boolean(
+                window.__maxvpnDiagnosticGroupHidden[site]
+              );
+
+            return `
+              <section
+                class="diagnostic-group-card"
+              >
+
+                <div class="diagnostic-group-head">
+
+                  <div>
+
+                    <div class="diagnostic-group-kicker">
+                      Диагностическая группа
+                    </div>
+
+                    <div class="diagnostic-group-title">
+                      Ресурсы связанные с ${esc(site)}
+                    </div>
+
+                    <div class="diagnostic-group-meta">
+                      ${groupRules.length}
+                      ${
+                        groupRules.length === 1
+                          ? 'ресурс'
+                          : groupRules.length < 5
+                            ? 'ресурса'
+                            : 'ресурсов'
+                      }
+
+                      · подтверждено
+                      ${groupConfirmed}
+
+                      · не подтверждено
+                      ${groupNotConfirmed}
+                    </div>
+
+                    <div
+                      class="diagnostic-group-toggle-wrap"
+                    >
+                      <button
+                        id="diagnostic-group-toggle-${groupIndex}"
+                        type="button"
+                        class="btn ghost diagnostic-group-toggle"
+                        onclick="toggleDiagnosticGroup(${groupIndex},this.dataset.group)"
+                        data-group="${esc(site)}"
+                        aria-controls="diagnostic-group-body-${groupIndex}"
+                        aria-expanded="${
+                          groupHidden ? 'false' : 'true'
+                        }"
+                      >
+                        ${
+                          groupHidden
+                            ? 'Показать добавленные ресурсы'
+                            : 'Скрыть добавленные ресурсы'
+                        }
+                      </button>
+                    </div>
+
+                  </div>
+
+                  <div class="diagnostic-group-count">
+                    <strong>
+                      ${groupRules.length}
+                    </strong>
+                    ресурсов
+                  </div>
+
+                </div>
+
+                <div
+                  id="diagnostic-group-body-${groupIndex}"
+                  style="${
+                    groupHidden
+                      ? 'display:none'
+                      : ''
+                  }"
+                >
+
+                  <div class="diagnostic-table-wrap">
+
+                    <table class="diagnostic-table">
+
+                      <thead>
+                        <tr>
+                          <th style="width:42px">
+                            №
+                          </th>
+
+                          <th>
+                            Ресурс
+                          </th>
+
+                          <th>
+                            Статус
+                          </th>
+
+                          <th>
+                            Актуальность
+                          </th>
+
+                          <th style="width:105px">
+                            Приоритет
+                          </th>
+
+                          <th style="width:170px">
+                            Действия
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        ${
+                          groupRules.map(
+                            (rule,index) => {
+
+                              const status =
+                                diagnosticStatus(rule);
+
+                              const evidence =
+                                status.evidence
+                                  ? status.evidence
+                                      .split(',')
+                                      .map(
+                                        x => x.trim()
+                                      )
+                                      .filter(Boolean)
+                                  : [];
+
+                              return `
+                                <tr
+                                  id="rule-${rule.id}"
+                                  class="${
+                                    smartSearchTargetMatched(
+                                      rule,
+                                      diagnosticQuery
+                                    )
+                                      ? 'smart-search-hit'
+                                      : ''
+                                  }"
+                                >
+
+                                  <td
+                                    class="diagnostic-number"
+                                  >
+                                    ${index + 1}
+                                  </td>
+
+                                  <td>
+
+                                    <div
+                                      class="diagnostic-resource-name"
+                                    >
+                                      ${
+                                        smartSearchHighlightTarget(
+                                          rule.target,
+                                          diagnosticQuery
+                                        )
+                                      }
+                                    </div>
+
+                                    <div
+                                      class="diagnostic-resource-meta"
+                                    >
+                                      ${ruleTypeLabel(rule)}
+                                      ·
+                                      ${ruleFamilyLabel(rule)}
+                                    </div>
+
+                                    ${
+                                      rule.comment
+                                        ? `
+                                          <div
+                                            class="diagnostic-comment"
+                                          >
+                                            ${esc(
+                                              rule.comment
+                                            )}
+                                          </div>
+                                        `
+                                        : ''
+                                    }
+
+                                  </td>
+
+                                  <td>
+                                    <span
+                                      class="diagnostic-status ${
+                                        statusClass[
+                                          status.kind
+                                        ] || 'legacy'
+                                      }"
+                                    >
+                                      ${
+                                        statusLabel[
+                                          status.kind
+                                        ] || status.text
+                                      }
+                                    </span>
+                                  </td>
+
+                                  <td
+                                    class="diagnostic-actuality"
+                                  >
+
+                                    ${
+                                      status.detail
+                                        ? `
+                                          <div
+                                            class="diagnostic-actuality-detail"
+                                          >
+                                            ${esc(
+                                              status.detail
+                                            )}
+                                          </div>
+                                        `
+                                        : ''
+                                    }
+
+                                    ${
+                                      evidence.length
+                                        ? `
+                                          <div
+                                            class="diagnostic-evidence"
+                                          >
+                                            ${
+                                              evidence.map(
+                                                host => `
+                                                  <span
+                                                    class="diagnostic-evidence-item"
+                                                  >
+                                                    ${esc(
+                                                      host
+                                                    )}
+                                                  </span>
+                                                `
+                                              ).join('')
+                                            }
+                                          </div>
+                                        `
+                                        : ''
+                                    }
+
+                                  </td>
+
+                                  <td>
+                                    <span
+                                      class="diagnostic-priority"
+                                    >
+                                      ${rule.priority}
+                                    </span>
+                                  </td>
+
+                                  <td
+                                    class="actions-cell"
+                                  >
+                                    ${ruleActionCells(rule)}
+                                  </td>
+
+                                </tr>
+                              `;
+                            }
+                          ).join('')
+                        }
+                      </tbody>
+
+                    </table>
+
+                  </div>
+
+                  ${
+                    groupRules.some(
+                      rule =>
+                        diagnosticStatus(rule).kind ===
+                        'legacy'
+                    )
+                      ? `
+                        <div
+                          class="diagnostic-legacy-note"
+                        >
+                          Исторические правила сохранены
+                          для совместимости и не имеют
+                          подтверждения текущей диагностикой.
+                        </div>
+                      `
+                      : ''
+                  }
+
+                </div>
+
+              </section>
+            `;
+          }
+        ).join('')
+    }
+  `;
+}
+
+
+
+/* MAXVPN-DIAGNOSTIC-UI-STATE-V8-4 */
+
+function captureDiagnosticUiState(){
+
+  const primary =
+    $('diagnosticToggle');
+
+  const state = {
+    mainOpen:
+      primary
+        ? primary.getAttribute(
+            'aria-expanded'
+          ) === 'true'
+        : false,
+
+    groups:{}
+  };
+
+  document
+    .querySelectorAll(
+      '.diagnostic-group-toggle'
+    )
+    .forEach(button => {
+
+      const site =
+        button.dataset.group;
+
+      if(!site){
+        return;
+      }
+
+      state.groups[site] =
+        button.getAttribute(
+          'aria-expanded'
+        ) === 'true';
+    });
+
+  return state;
+}
+
+
+function restoreDiagnosticUiState(
+  state
+){
+
+  if(!state){
+    return;
+  }
+
+  window.__maxvpnSmartGroupOpen =
+    window.__maxvpnSmartGroupOpen || {};
+
+  window.__maxvpnSmartGroupOpen.diagnostic =
+    Boolean(state.mainOpen);
+
+  const primary =
+    $('diagnosticToggle');
+
+  const body =
+    $('diagnosticGroups');
+
+  if(primary){
+
+    primary.setAttribute(
+      'aria-expanded',
+      state.mainOpen
+        ? 'true'
+        : 'false'
+    );
+
+    primary.textContent =
+      state.mainOpen
+        ? '▾'
+        : '▸';
+  }
+
+  if(body){
+
+    body.style.display =
+      state.mainOpen
+        ? ''
+        : 'none';
+  }
+
+  const secondary =
+    $('diagnosticResourcesToggle');
+
+  if(secondary){
+
+    secondary.style.display =
+      'inline-flex';
+
+    secondary.textContent =
+      state.mainOpen
+        ? 'Скрыть найденные ресурсы'
+        : 'Показать найденные ресурсы';
+
+    secondary.setAttribute(
+      'aria-expanded',
+      state.mainOpen
+        ? 'true'
+        : 'false'
+    );
+  }
+
+
+  document
+    .querySelectorAll(
+      '.diagnostic-group-toggle'
+    )
+    .forEach(button => {
+
+      const site =
+        button.dataset.group;
+
+      if(!site){
+        return;
+      }
+
+      if(
+        !Object.prototype.hasOwnProperty.call(
+          state.groups,
+          site
+        )
+      ){
+        return;
+      }
+
+      const open =
+        Boolean(
+          state.groups[site]
+        );
+
+      const controls =
+        button.getAttribute(
+          'aria-controls'
+        );
+
+      const groupBody =
+        controls
+          ? document.getElementById(
+              controls
+            )
+          : null;
+
+      button.setAttribute(
+        'aria-expanded',
+        open ? 'true' : 'false'
+      );
+
+      button.textContent =
+        open
+          ? 'Скрыть добавленные ресурсы'
+          : 'Показать добавленные ресурсы';
+
+      if(groupBody){
+
+        groupBody.style.display =
+          open
+            ? ''
+            : 'none';
+      }
+
+      window.__maxvpnDiagnosticGroupHidden =
+        window.__maxvpnDiagnosticGroupHidden || {};
+
+      window.__maxvpnDiagnosticGroupHidden[
+        site
+      ] = !open;
+    });
+}
+
+
+function refreshDiagnosticSearchHighlightV8(){
+
+  const root =
+    $('diagnosticGroups');
+
+  if(!root){
+    return;
+  }
+
+  const input =
+    $('rtSearch');
+
+  const query =
+    String(
+      input?.value || ''
+    ).trim();
+
+  root
+    .querySelectorAll(
+      '.diagnostic-resource-name'
+    )
+    .forEach(nameEl => {
+
+      const row =
+        nameEl.closest('tr');
+
+      const value =
+        nameEl.textContent || '';
+
+      if(row){
+
+        row.classList.remove(
+          'diagnostic-search-hit'
+        );
+      }
+
+      if(!query){
+
+        nameEl.textContent =
+          value;
+
+        return;
+      }
+
+      const index =
+        value
+          .toLowerCase()
+          .indexOf(
+            query.toLowerCase()
+          );
+
+      if(index < 0){
+
+        nameEl.textContent =
+          value;
+
+        return;
+      }
+
+      const before =
+        value.slice(
+          0,
+          index
+        );
+
+      const match =
+        value.slice(
+          index,
+          index + query.length
+        );
+
+      const after =
+        value.slice(
+          index + query.length
+        );
+
+      const escapeHtml =
+        value =>
+          String(value)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;')
+            .replace(/'/g,'&#39;');
+
+      nameEl.innerHTML =
+        escapeHtml(before) +
+        '<mark>' +
+        escapeHtml(match) +
+        '</mark>' +
+        escapeHtml(after);
+
+      if(row){
+
+        row.classList.add(
+          'diagnostic-search-hit'
+        );
+      }
+    });
+}
+
+
+
+function openSmartGroupForSearch(kind){
+
+  const groups = {
+    ruDirect: {
+      body: 'ruDirectBody',
+      toggle: 'ruDirectToggle'
+    },
+
+    my: {
+      body: 'myBody',
+      toggle: 'myToggle'
+    },
+
+    diagnostic: {
+      body: 'diagnosticGroups',
+      toggle: 'diagnosticToggle'
+    }
+  };
+
+  const config =
+    groups[kind];
+
+  if(!config){
+    return;
+  }
+
+  const body =
+    $(config.body);
+
+  const button =
+    $(config.toggle);
+
+  if(!body || !button){
+    return;
+  }
+
+  window.__maxvpnSmartGroupOpen =
+    window.__maxvpnSmartGroupOpen || {};
+
+  window.__maxvpnSmartGroupOpen[kind] =
+    true;
+
+  body.style.display =
+    '';
+
+  button.setAttribute(
+    'aria-expanded',
+    'true'
+  );
+
+  button.textContent =
+    '▾';
+
+  if(kind === 'diagnostic'){
+
+    const secondary =
+      $('diagnosticResourcesToggle');
+
+    if(secondary){
+
+      secondary.style.display =
+        'inline-flex';
+
+      secondary.textContent =
+        'Скрыть найденные ресурсы';
+
+      secondary.setAttribute(
+        'aria-expanded',
+        'true'
+      );
+    }
+  }
+}
+
+
+function handleRuleSearch(){
+
+  const query =
+    ($('rtSearch')?.value || '')
+      .trim()
+      .toLowerCase();
+
+  /*
+   * Перерисовываем все три группы.
+   * Сама подсветка выполняется их renderer-ами.
+   */
+  renderRuleGroups();
+
+  if(!query){
+    return;
+  }
+
+  const all =
+    state.routing?.rules || [];
+
+
+  // ========================================================
+  // Ru DIRECT
+  // ========================================================
+
+  const ruDirect =
+    all.filter(
+      isRuDirectRule
+    );
+
+  const ruDirectMatch =
+    ruDirect.some(
+      rule =>
+        smartSearchTargetMatched(
+          rule,
+          query
+        )
+        ||
+        String(rule?.target_type || '')
+          .toLowerCase()
+          .includes(query)
+        ||
+        String(rule?.priority || '')
+          .includes(query)
+        ||
+        String(rule?.comment || '')
+          .toLowerCase()
+          .includes(query)
+    );
+
+  if(ruDirectMatch){
+    openSmartGroupForSearch(
+      'ruDirect'
+    );
+  }
+
+
+  // ========================================================
+  // Мои исключения
+  // ========================================================
+
+  const my =
+    all.filter(
+      rule =>
+        !isRuDirectRule(rule) &&
+        !isDiagnosticRule(rule)
+    );
+
+  const myMatch =
+    my.some(
+      rule =>
+        smartSearchTargetMatched(
+          rule,
+          query
+        )
+        ||
+        String(rule?.target_type || '')
+          .toLowerCase()
+          .includes(query)
+        ||
+        String(rule?.priority || '')
+          .includes(query)
+        ||
+        String(rule?.comment || '')
+          .toLowerCase()
+          .includes(query)
+    );
+
+  if(myMatch){
+    openSmartGroupForSearch(
+      'my'
+    );
+  }
+
+
+  // ========================================================
+  // Диагностика
+  // ========================================================
+
+  const diagnostic =
+    all.filter(
+      isDiagnosticRule
+    );
+
+  const diagnosticMatch =
+    diagnostic.some(
+      rule =>
+        smartSearchTargetMatched(
+          rule,
+          query
+        )
+        ||
+        String(rule?.target_type || '')
+          .toLowerCase()
+          .includes(query)
+        ||
+        String(rule?.priority || '')
+          .includes(query)
+        ||
+        String(rule?.comment || '')
+          .toLowerCase()
+          .includes(query)
+    );
+
+  if(diagnosticMatch){
+    openSmartGroupForSearch(
+      'diagnostic'
+    );
+  }
+}
+
+
+function renderRuleGroups(){
+
+  const all =
+    state.routing?.rules || [];
+
+  const ruDirect =
+    all.filter(
+      isRuDirectRule
+    );
+
+  const diagnostic =
+    all.filter(
+      isDiagnosticRule
+    );
+
+  const my =
+    all.filter(
+      rule =>
+        !isRuDirectRule(rule) &&
+        !isDiagnosticRule(rule)
+    );
+
+
+  $('ruDirectCount').textContent =
+    ruDirect.length;
+
+  $('myExceptionsCount').textContent =
+    my.length;
+
+  $('diagnosticGroupCount').textContent =
+    diagnostic.length;
+
+  $('diagnosticGroupSubtitle').textContent =
+    diagnostic.length
+      ? `${diagnostic.length} ресурсов`
+      : '0 ресурсов';
+
+
+  renderRuDirectRules(
+    ruDirect
+  );
+
+  renderRules(
+    my
+  );
+
+  renderDiagnosticGroups(
+    diagnostic
+  );
+}
+
+
+function renderRules(rulesOverride=null){
+
+  const source =
+    Array.isArray(rulesOverride)
+      ? rulesOverride
+      : (state.routing?.rules || []);
+
+  const query =
+    ($('rtSearch')?.value || '')
+      .trim();
+
+  const rows =
+    query
+      ? source.filter(
+          rule =>
+            String(rule.target || '')
+              .toLowerCase()
+              .includes(query.toLowerCase())
+
+            ||
+
+            String(rule.target_type || '')
+              .toLowerCase()
+              .includes(query.toLowerCase())
+
+            ||
+
+            String(rule.priority || '')
+              .includes(query)
+
+            ||
+
+            String(rule.comment || '')
+              .toLowerCase()
+              .includes(query.toLowerCase())
+        )
+      : source;
+
+  $('rulesBody').innerHTML =
+    rows.map(
+      (rule,index) => {
+
+        const matched =
+          smartSearchTargetMatched(
+            rule,
+            query
+          );
+
+        return `
+          <tr
+            id="rule-${rule.id}"
+            class="${
+              matched
+                ? 'smart-search-hit'
+                : ''
+            }"
+          >
+            <td>${index + 1}</td>
+
+            <td>
+              ${rule.target_type}
+            </td>
+
+            <td>
+              ${smartSearchHighlightTarget(
+                rule.target,
+                query
+              )}
+            </td>
+
+            <td>${rule.priority}</td>
+
+            <td class="${rule.enabled?'ok':'warn'}">
+              ${rule.enabled?'Включено':'Выключено'}
+            </td>
+
+            <td class="comment-cell">
+              <div class="comment-wrap">
+                <input
+                  id="comment-${rule.id}"
+                  class="comment-input"
+                  maxlength="500"
+                  value="${esc(rule.comment || '')}"
+                  placeholder="Комментарий…"
+                  onblur="saveComment(${rule.id})"
+                  onkeydown="commentKeydown(event,${rule.id})"
+                  title="Комментарий к правилу">
+                <span
+                  id="comment-status-${rule.id}"
+                  class="comment-status"
+                  aria-label="Сохранено"
+                >✓</span>
+              </div>
+            </td>
+
+            <td class="actions-cell">
+              ${ruleActionCells(rule)}
+            </td>
+          </tr>
+        `;
+      }
+    ).join('');
+}
+
+
+
+function commentKeydown(event,id){if(event.key==='Enter'){event.preventDefault();event.target.blur()}else if(event.key==='Escape'){event.preventDefault();renderRuleGroups()}}
+async function saveComment(id){const input=$('comment-'+id);if(!input)return;const x=(state.routing?.rules||[]).find(r=>r.id===id);if(!x)return;const value=input.value.trim();if(value===String(x.comment||'')){return}try{const updated=await api('/api/appliance/v1/routing/rules/'+id,{method:'PATCH',body:JSON.stringify({comment:value})});state.routing.rules=state.routing.rules.map(r=>r.id===id?updated:r);await refreshRouting();render();const badge=$('comment-status-'+id);if(badge){badge.classList.add('show');setTimeout(()=>badge.classList.remove('show'),3000)}}catch(e){alert(e.message)}}
+
+function editRule(id){const x=(state.routing?.rules||[]).find(r=>r.id===id);if(!x)return;const tr=$('rule-'+id);tr.innerHTML=`<td>${ruleNumber(x.id)}</td><td><select id="edit-type-${id}" class="select"><option value="domain" ${x.target_type==='domain'?'selected':''}>Домен</option><option value="cidr" ${x.target_type==='cidr'?'selected':''}>CIDR</option></select></td><td><input id="edit-target-${id}" class="input edit-input" value="${esc(x.target)}"></td><td><input id="edit-priority-${id}" class="input edit-input" type="number" min="1" value="${x.priority}"></td><td class="${x.enabled?'ok':'warn'}">${x.enabled?'Включено':'Выключено'}</td><td><button class="btn primary" onclick="saveRule(${id})">Сохранить</button> <button class="btn ghost" onclick="renderRules()">Отмена</button></td>`}
+function esc(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')}
+async function saveRule(id){try{const type=$(`edit-type-${id}`).value,target=$(`edit-target-${id}`).value.trim(),priority=Number($(`edit-priority-${id}`).value);const updated=await api('/api/appliance/v1/routing/rules/'+id,{method:'PATCH',body:JSON.stringify({target_type:type,target,priority})});state.routing.rules=state.routing.rules.map(x=>x.id===id?updated:x);await refreshRouting();render()}catch(e){alert(e.message)}}
+function vlessEscape(value){return esc(String(value??''))}
+const VLESS_COUNTRIES={
+  nl:{name:'Нидерланды',flag:'🇳🇱'},
+  pl:{name:'Польша',flag:'🇵🇱'},
+  us:{name:'США',flag:'🇺🇸'},
+  ca:{name:'Канада',flag:'🇨🇦'},
+  tr:{name:'Турция',flag:'🇹🇷'},
+  at:{name:'Австрия',flag:'🇦🇹'},
+  kz:{name:'Казахстан',flag:'🇰🇿'},
+  lt:{name:'Литва',flag:'🇱🇹'},
+  lv:{name:'Латвия',flag:'🇱🇻'},
+  ru:{name:'Россия',flag:'🇷🇺'},
+  uk:{name:'Великобритания',flag:'🇬🇧'},
+  gb:{name:'Великобритания',flag:'🇬🇧'},
+  se:{name:'Швеция',flag:'🇸🇪'},
+  fr:{name:'Франция',flag:'🇫🇷'},
+  de:{name:'Германия',flag:'🇩🇪'},
+  it:{name:'Италия',flag:'🇮🇹'},
+  fi:{name:'Финляндия',flag:'🇫🇮'},
+  ch:{name:'Швейцария',flag:'🇨🇭'},
+  ae:{name:'ОАЭ',flag:'🇦🇪'},
+  jp:{name:'Япония',flag:'🇯🇵'},
+  hk:{name:'Гонконг',flag:'🇭🇰'}
+};
+function vlessCountry(profile){
+  const candidates=[profile?.address,profile?.server_name,profile?.name];
+  for(const value of candidates){
+    const host=String(value||'').trim().toLowerCase()
+      .replace(/^[a-z][a-z0-9+.-]*:\/\//,'')
+      .split(/[/?#]/,1)[0]
+      .replace(/:\d+$/,'');
+    const match=host.match(/^(nl|pl|us|ca|tr|at|kz|lt|lv|ru|uk|gb|se|fr|de|it|fi|ch|ae|jp|hk)\d*(?=\.|$)/i);
+    if(match)return VLESS_COUNTRIES[match[1].toLowerCase()];
+  }
+  return {name:'Страна не определена',flag:'🌐',unknown:true};
+}
+const VLESS_COUNTRY_FLAG_SVGS=Object.freeze({
+  nl:'<rect width="30" height="20" fill="#21468B"/><rect width="30" height="13.333" fill="#fff"/><rect width="30" height="6.667" fill="#AE1C28"/>',
+  pl:'<rect width="30" height="20" fill="#fff"/><rect y="10" width="30" height="10" fill="#DC143C"/>',
+  us:'<rect width="30" height="20" fill="#fff"/><path fill="#B22234" d="M0 0h30v1.54H0z M0 3.08h30v1.54H0z M0 6.16h30v1.54H0z M0 9.24h30v1.54H0z M0 12.32h30v1.54H0z M0 15.4h30v1.54H0z M0 18.48h30V20H0z"/><rect width="13" height="10.77" fill="#3C3B6E"/><g fill="#fff"><circle cx="2" cy="2" r=".55"/><circle cx="5" cy="2" r=".55"/><circle cx="8" cy="2" r=".55"/><circle cx="11" cy="2" r=".55"/><circle cx="3.5" cy="4.4" r=".55"/><circle cx="6.5" cy="4.4" r=".55"/><circle cx="9.5" cy="4.4" r=".55"/><circle cx="2" cy="6.8" r=".55"/><circle cx="5" cy="6.8" r=".55"/><circle cx="8" cy="6.8" r=".55"/><circle cx="11" cy="6.8" r=".55"/><circle cx="3.5" cy="9.2" r=".55"/><circle cx="6.5" cy="9.2" r=".55"/><circle cx="9.5" cy="9.2" r=".55"/></g>',
+  ca:'<rect width="30" height="20" fill="#fff"/><rect width="7" height="20" fill="#D80621"/><rect x="23" width="7" height="20" fill="#D80621"/><path fill="#D80621" d="M15 3.2l1.6 3.1 2.1-1.1-.6 3 2.4 1.4-3.1.8.8 3-2.4-1.3-1 3.6-1-3.6-2.4 1.3.8-3-3.1-.8 2.4-1.4-.6-3 2.1 1.1z"/>',
+  tr:'<rect width="30" height="20" fill="#E30A17"/><circle cx="11.2" cy="10" r="5.2" fill="#fff"/><circle cx="13" cy="8.9" r="4.2" fill="#E30A17"/><path fill="#fff" d="M19.3 5.2l1.25 3.15 3.38.16-2.62 2.13.85 3.28-2.86-1.78-2.86 1.78.85-3.28-2.62-2.13 3.38-.16z"/>',
+  at:'<rect width="30" height="20" fill="#ED2939"/><rect y="6.667" width="30" height="6.666" fill="#fff"/>',
+  kz:'<rect width="30" height="20" fill="#00AFCA"/><g fill="#FEC50C"><circle cx="15" cy="6.2" r="2.8"/><path d="M15 1.6l.8 1.5-.8.8-.8-.8z M15 10.3l.8-1.5-.8-.8-.8.8z M10.4 6.2l1.5-.8.8.8-.8.8z M19.6 6.2l-1.5-.8-.8.8.8.8z M11.7 2.9l1.6.4-.1 1.1-1.1.1z M18.3 2.9l-1.6.4.1 1.1 1.1.1z"/><path d="M8 14.8q3-2 7-1.1 4-1 7 1.1l-3.1-.1-1.8 1.2-2.1-1-2.1 1-1.8-1.2z"/></g>',
+  lt:'<rect width="30" height="20" fill="#C1272D"/><rect width="30" height="6.667" fill="#FDB913"/><rect y="6.667" width="30" height="6.666" fill="#006A44"/>',
+  lv:'<rect width="30" height="20" fill="#9E3039"/><rect y="8" width="30" height="4" fill="#fff"/>',
+  ru:'<rect width="30" height="20" fill="#fff"/><rect y="6.667" width="30" height="6.666" fill="#0039A6"/><rect y="13.333" width="30" height="6.667" fill="#D52B1E"/>',
+  uk:'<rect width="30" height="20" fill="#012169"/><path fill="#fff" d="M0 0h4.6L30 16.95V20h-4.6L0 3.05z M25.4 0H30v3.05L4.6 20H0v-3.05z"/><path fill="#C8102E" d="M0 0h2.3L30 18.45V20h-2.3L0 1.55z M27.7 0H30v1.55L2.3 20H0v-1.55z"/><path fill="#fff" d="M11 0h8v20h-8z M0 6h30v8H0z"/><path fill="#C8102E" d="M13 0h4v20h-4z M0 8h30v4H0z"/>',
+  gb:'<rect width="30" height="20" fill="#012169"/><path fill="#fff" d="M0 0h4.6L30 16.95V20h-4.6L0 3.05z M25.4 0H30v3.05L4.6 20H0v-3.05z"/><path fill="#C8102E" d="M0 0h2.3L30 18.45V20h-2.3L0 1.55z M27.7 0H30v1.55L2.3 20H0v-1.55z"/><path fill="#fff" d="M11 0h8v20h-8z M0 6h30v8H0z"/><path fill="#C8102E" d="M13 0h4v20h-4z M0 8h30v4H0z"/>',
+  se:'<rect width="30" height="20" fill="#006AA7"/><path fill="#FECC00" d="M8 0h3v20H8z M0 8.5h30v3H0z"/>',
+  fr:'<rect width="30" height="20" fill="#ED2939"/><rect width="20" height="20" fill="#fff"/><rect width="10" height="20" fill="#002395"/>',
+  de:'<rect width="30" height="20" fill="#FFCE00"/><rect width="30" height="13.333" fill="#D00"/><rect width="30" height="6.667" fill="#000"/>',
+  it:'<rect width="30" height="20" fill="#CE2B37"/><rect width="20" height="20" fill="#fff"/><rect width="10" height="20" fill="#009246"/>',
+  fi:'<rect width="30" height="20" fill="#fff"/><path fill="#003580" d="M8 0h4v20H8z M0 8h30v4H0z"/>',
+  ch:'<rect x="5" width="20" height="20" fill="#D52B1E"/><path fill="#fff" d="M12 4h6v4.5h4.5v5H18V18h-6v-4.5H7.5v-5H12z"/>',
+  ae:'<rect x="0" width="7" height="20" fill="#FF0000"/><rect x="7" width="23" height="6.667" fill="#00732F"/><rect x="7" y="6.667" width="23" height="6.666" fill="#fff"/><rect x="7" y="13.333" width="23" height="6.667" fill="#000"/>',
+  jp:'<rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5.8" fill="#BC002D"/>',
+  hk:'<rect width="30" height="20" fill="#DE2910"/><g fill="#fff"><ellipse cx="15" cy="5.1" rx="1.65" ry="4.1"/><ellipse cx="15" cy="5.1" rx="1.65" ry="4.1" transform="rotate(72 15 10)"/><ellipse cx="15" cy="5.1" rx="1.65" ry="4.1" transform="rotate(144 15 10)"/><ellipse cx="15" cy="5.1" rx="1.65" ry="4.1" transform="rotate(216 15 10)"/><ellipse cx="15" cy="5.1" rx="1.65" ry="4.1" transform="rotate(288 15 10)"/></g><circle cx="15" cy="10" r="1.5" fill="#DE2910"/>'
+});
+function vlessCountryFlagHtml(profile){
+  const country=vlessCountry(profile);
+  const code=Object.keys(VLESS_COUNTRIES).find(key=>VLESS_COUNTRIES[key].name===country.name);
+  const artwork=code?VLESS_COUNTRY_FLAG_SVGS[code]:null;
+  const title=vlessEscape(country.name==='Страна не определена'?'Страна не определена':`Флаг: ${country.name}`);
+  const svg=artwork||'<circle cx="15" cy="10" r="7" fill="none" stroke="#71809a" stroke-width="1.8"/><path d="M8 10h14M15 3c-4 4-4 10 0 14M15 3c4 4 4 10 0 14" fill="none" stroke="#71809a" stroke-width="1.4"/>';
+  return `<span class="vless-country-flag" role="img" aria-label="${title}" title="${title}"><svg class="vless-country-flag-svg" viewBox="0 0 30 20" aria-hidden="true" focusable="false">${svg}</svg></span>`;
+}
+
+function formatVlessDuration(seconds){
+  const total=Math.max(0,Math.floor(Number(seconds)||0));
+  const days=Math.floor(total/86400),hours=Math.floor((total%86400)/3600),minutes=Math.floor((total%3600)/60),secs=total%60;
+  if(days)return `${days} д ${hours} ч`;
+  if(hours)return `${hours} ч ${minutes} мин`;
+  if(minutes)return `${minutes} мин ${secs} с`;
+  return `${secs} с`;
+}
+function formatVlessTimestamp(value){if(!value)return '—';const date=new Date(value);return Number.isNaN(date.getTime())?String(value):date.toLocaleString()}
+function vlessIntervalSeconds(value){
+  if(typeof value!=='string')return null;
+  const match=value.trim().match(/^(\d+(?:\.\d+)?)(ms|s|m|h)$/i);
+  if(!match)return null;
+  const amount=Number(match[1]);if(!Number.isFinite(amount)||amount<=0)return null;
+  const unit=match[2].toLowerCase(),factor=unit==='ms'?0.001:unit==='s'?1:unit==='m'?60:3600;
+  return amount*factor;
+}
+function vlessMeasurementAgeSeconds(value){
+  if(!value)return null;const stamp=Date.parse(value);if(!Number.isFinite(stamp))return null;
+  return Math.max(0,Math.floor((Date.now()-stamp)/1000));
+}
+function vlessManualMeasurementFreshness(value,interval){
+  const age=vlessMeasurementAgeSeconds(value),limit=vlessIntervalSeconds(interval);
+  if(age===null)return 'возраст неизвестен';
+  const text=`возраст ${formatVlessDuration(age)}`;
+  if(limit!==null&&age>limit)return `${text} · УСТАРЕЛО: старше интервала URLTest (${interval}); сохранённая ручная проверка не является текущим измерением URLTest`;
+  if(limit!==null)return `${text} · сохранённый результат ручной проверки; не является измерением URLTest`;
+  return `${text} · порог свежести неизвестен; не является измерением URLTest`;
+}
+function vlessCurrentUrltestMeasurement(current){
+  if(!current)return 'URLTest (sing-box): нет снимка состояния';
+  const delay=current.active_delay_ms==null?'нет измерения':`${Number(current.active_delay_ms)} мс`;
+  const measuredAt=current.active_delay_observed_at;
+  if(!measuredAt)return `URLTest (sing-box): ${delay} · время измерения неизвестно · свежесть неизвестна`;
+  const age=vlessMeasurementAgeSeconds(measuredAt);if(age===null)return `URLTest (sing-box): ${delay} · время измерения не распознано · свежесть неизвестна`;
+  const limit=vlessIntervalSeconds(current.urltest_interval),ageText=`измерено ${formatVlessTimestamp(measuredAt)} · возраст ${formatVlessDuration(age)}`;
+  if(limit!==null&&age>limit)return `URLTest (sing-box): ${delay} · ${ageText} · УСТАРЕЛО: возраст больше интервала ${current.urltest_interval}`;
+  if(limit!==null)return `URLTest (sing-box): ${delay} · ${ageText} · в пределах интервала ${current.urltest_interval}`;
+  return `URLTest (sing-box): ${delay} · ${ageText} · интервал для оценки свежести неизвестен`;
+}
+function selectionAgeLabel(seconds){return seconds==null||!Number.isFinite(Number(seconds))?'неизвестен':formatVlessDuration(Number(seconds))}
+function selectionFreshnessLabel(value){return ({fresh:'оба измерения свежие',stale:'есть устаревшее измерение',incomplete:'недостаточно данных'})[value]||'свежесть неизвестна'}
+function selectionDiagnosticLabel(value){return ({consistent_with_latest_delays:'Согласуется с последними измерениями',not_explained_by_latest_delays:'Не объясняется последними измерениями',stale_measurements:'Измерения устарели',insufficient_data:'Недостаточно данных',insufficient_configuration:'Не хватает параметров URLTest',observation_gap:'Перерыв в наблюдениях',selection_mode_changed:'Изменился режим выбора',manual_selection:'Ручной выбор'})[value]||'Диагностика не сохранена'}
+function applyVlessDelayHistory(results,replace=false){
+  const incoming=Object.fromEntries((results||[]).map(item=>[item.profile_id,item]));
+  state.vlessDelayHistory=replace?incoming:{...(state.vlessDelayHistory||{}),...incoming};
+  state.vlessDelays=Object.fromEntries(Object.entries(state.vlessDelayHistory).map(([id,item])=>[id,item?.delay_ms??null]));
+}
+function vlessDelay(id){
+  const item=state.vlessDelayHistory?.[id];
+  if(!item||!item.last_checked_at)return 'Не проверено';
+  if(item.reachable&&typeof item.delay_ms==='number')return `${item.delay_ms} мс`;
+  if(item.first_failed_at){const start=Date.parse(item.first_failed_at);const seconds=Number.isFinite(start)?Math.max(0,Math.floor((Date.now()-start)/1000)):(item.unavailable_seconds||0);return `Нет ответа · ${formatVlessDuration(seconds)}`}
+  return 'Нет ответа';
+}
+function vlessDelayDetails(id){
+  const item=state.vlessDelayHistory?.[id];if(!item||!item.last_checked_at)return 'Ручная проверка на BRUME 3: ещё не выполнялась';
+  const interval=state.vlessSelectionHistory?.current?.urltest_interval||state.vless?.settings?.urltest_interval||null;
+  const parts=[`Ручная проверка на BRUME 3: ${formatVlessTimestamp(item.last_checked_at)}`,vlessManualMeasurementFreshness(item.last_checked_at,interval)];
+  if(item.first_failed_at){parts.push(`Недоступен с: ${formatVlessTimestamp(item.first_failed_at)}`);parts.push(`Неудач подряд: ${item.consecutive_failures||0}`);if(item.last_success_at)parts.push(`Последний успех: ${formatVlessTimestamp(item.last_success_at)}`)}
+  else if(item.last_recovered_at){parts.push(`Восстановлен: ${formatVlessTimestamp(item.last_recovered_at)}`);if(item.last_outage_duration_seconds!==null&&item.last_outage_duration_seconds!==undefined)parts.push(`Последний простой: ${formatVlessDuration(item.last_outage_duration_seconds)}`)}
+  else if(item.last_success_at)parts.push(`Последний успех: ${formatVlessTimestamp(item.last_success_at)}`);
+  return parts.join(' · ');
+}
+function vlessUrltestSampleState(profile){
+  const sample=state.vlessSelectionHistory?.current?.profile_delays?.[`vless-profile-${profile.id}`]||null;
+  const manualSample=state.vlessDelayHistory?.[profile.id]||null;
+  const sampleEpoch=Date.parse(sample?.observed_at||'');
+  const manualEpoch=Date.parse(manualSample?.last_checked_at||'');
+  const sampleIsManual=manualSample?.reachable===true&&typeof sample?.delay_ms==='number'&&typeof manualSample?.delay_ms==='number'&&sample.delay_ms===manualSample.delay_ms&&Number.isFinite(sampleEpoch)&&Number.isFinite(manualEpoch)&&Math.abs(sampleEpoch-manualEpoch)<=12000;
+  return {sample,manualSample,sampleIsManual};
+}
+function vlessUrltestStatusMeasurement(sample,interval){
+  if(!sample||typeof sample.delay_ms!=='number'||!Number.isFinite(sample.delay_ms)||sample.delay_ms<=0||!sample.observed_at)return null;
+  const delay=Math.round(sample.delay_ms);
+  const age=vlessMeasurementAgeSeconds(sample.observed_at);
+  const limit=vlessIntervalSeconds(interval);
+  const stale=age===null||limit===null||age>limit;
+  const ageLabel=age===null?'возраст неизвестен':`${formatVlessDuration(age)} назад`;
+  const measured=`Измерено ${formatVlessTimestamp(sample.observed_at)}`;
+  if(stale){
+    return {
+      source:'urltest-stale',
+      delay_ms:null,
+      display:`Последний URLTest: ${delay} мс · устарел (${ageLabel})`,
+      details:`${measured} · ${ageLabel} · последний успешный результат старше допустимого интервала ${interval||'неизвестен'}; он не подтверждает текущую доступность сервера`
+    };
+  }
+  return {
+    source:'urltest',
+    delay_ms:delay,
+    display:`URLTest (sing-box): ${delay} мс`,
+    details:`${measured} · возраст ${formatVlessDuration(age)} · в пределах интервала ${interval}`
+  };
+}
+function vlessManualStatusMeasurement(manualSample,interval){
+  if(!manualSample?.last_checked_at)return null;
+  const checkedAt=manualSample.last_checked_at;
+  const age=vlessMeasurementAgeSeconds(checkedAt);
+  const limit=vlessIntervalSeconds(interval);
+  const stale=age===null||limit===null||age>limit;
+  const ageLabel=age===null?'возраст неизвестен':`${formatVlessDuration(age)} назад`;
+  const checkedLabel=`Последняя ручная проверка BRUME 3: ${formatVlessTimestamp(checkedAt)}`;
+  const lastSuccess=manualSample.last_success_at
+    ?`Последний успешный результат ручной проверки: ${formatVlessTimestamp(manualSample.last_success_at)}`
+    :'Последний успешный результат ручной проверки не сохранён';
+  if(manualSample.reachable===false&&manualSample.first_failed_at){
+    const failedAt=manualSample.first_failed_at;
+    const unavailable=vlessMeasurementAgeSeconds(failedAt)??manualSample.unavailable_seconds??0;
+    const failures=Math.max(1,Number(manualSample.consecutive_failures)||1);
+    const details=`Первая неудачная ручная проверка BRUME 3: ${formatVlessTimestamp(failedAt)} · неудачных проверок подряд: ${failures} · ${checkedLabel} · возраст последней проверки: ${ageLabel} · ${lastSuccess} · отсчёт начинается с обнаружения отказа, а не с доказанного начала сетевого сбоя`;
+    if(stale){
+      return {
+        source:'manual-outage-stale',
+        delay_ms:null,
+        display:`Результат ручной проверки устарел · ${ageLabel}`,
+        details:`${details} · текущая доступность неизвестна: результат старше допустимого интервала ${interval||'неизвестен'}`
+      };
+    }
+    return {
+      source:'manual-outage',
+      delay_ms:null,
+      display:`Нет ответа по ручной проверке · ${formatVlessDuration(unavailable)}`,
+      details
+    };
+  }
+  if(manualSample.reachable===true&&typeof manualSample.delay_ms==='number'&&Number.isFinite(manualSample.delay_ms)){
+    const delay=Math.round(manualSample.delay_ms);
+    if(stale){
+      return {
+        source:'manual-stale',
+        delay_ms:null,
+        display:`Старая ручная проверка · ${ageLabel}`,
+        details:`${checkedLabel} · ${lastSuccess} · сохранённый результат ${delay} мс не подтверждает текущую доступность сервера`
+      };
+    }
+    return {
+      source:'manual',
+      delay_ms:delay,
+      display:`Ручная проверка: ${delay} мс`,
+      details:vlessDelayDetails(manualSample.profile_id)
+    };
+  }
+  return null;
+}
+function vlessProfileMeasurement(profile){
+  const {sample,manualSample,sampleIsManual}=vlessUrltestSampleState(profile);
+  const interval=state.vlessSelectionHistory?.current?.urltest_interval||state.vless?.settings?.urltest_interval||null;
+  const availability=state.vlessSelectionHistory?.profile_availability?.[String(profile.id)]||null;
+  const urltestObservation=sampleIsManual?null:vlessUrltestStatusMeasurement(sample,interval);
+  const manualObservation=vlessManualStatusMeasurement(manualSample,interval);
+  const urltestObservedAt=Date.parse(sample?.observed_at||'');
+  const manualObservedAt=Date.parse(manualSample?.last_checked_at||'');
+  const hasUrltestTime=Number.isFinite(urltestObservedAt);
+  const hasManualTime=Number.isFinite(manualObservedAt);
+  // A result recorded after the persisted URLTest-missing marker supersedes that old outage state.
+  const hasPersistedMissing=availability?.status==='no_result'&&!!availability.first_missing_at;
+  if(hasPersistedMissing){
+    const missingObservedAt=Date.parse(availability.first_missing_at);
+    if(Number.isFinite(missingObservedAt)){
+      const urltestAfterMissing=!!urltestObservation&&hasUrltestTime&&urltestObservedAt>missingObservedAt;
+      const manualAfterMissing=!!manualObservation&&hasManualTime&&manualObservedAt>missingObservedAt;
+      if(urltestAfterMissing||manualAfterMissing){
+        if(manualAfterMissing&&(!urltestAfterMissing||manualObservedAt>urltestObservedAt||sampleIsManual))return manualObservation;
+        if(urltestAfterMissing)return urltestObservation;
+      }
+    }
+  }else{
+    // Without an active persisted no-result marker, display whichever independent observation is newer.
+    if(manualObservation&&(sampleIsManual||!hasUrltestTime||(hasManualTime&&manualObservedAt>urltestObservedAt)))return manualObservation;
+    if(urltestObservation&&(!hasManualTime||urltestObservedAt>=manualObservedAt))return urltestObservation;
+  }
+  if(availability?.status==='no_result'&&availability.first_missing_at){
+    const seconds=vlessMeasurementAgeSeconds(availability.first_missing_at)??availability.unavailable_seconds??0;
+    const lastSuccess=availability.last_success_at?`Последний успешный замер: ${formatVlessTimestamp(availability.last_success_at)}${availability.last_success_delay_ms==null?'':` · ${Number(availability.last_success_delay_ms)} мс`}`:'Успешное измерение ранее не сохранено';
+    return {source:'urltest-monitor',delay_ms:null,display:`Нет успешного измерения · ${formatVlessDuration(seconds)}`,details:`Первое наблюдение без успешной записи sing-box: ${formatVlessTimestamp(availability.first_missing_at)} · ${lastSuccess} · это время обнаружения отсутствия результата, а не точное время начала сетевого сбоя`};
+  }
+  if(availability?.status==='unknown'&&availability.reason==='history_reset'){
+    const lastSuccess=availability.last_success_at?`Последний успешный замер: ${formatVlessTimestamp(availability.last_success_at)}${availability.last_success_delay_ms==null?'':` · ${Number(availability.last_success_delay_ms)} мс`}`:'Нет сохранённого успешного замера';
+    return {source:'urltest-monitor',delay_ms:null,display:'Нет подтверждённых данных URLTest',details:`История sing-box могла быть сброшена или перезапущена; общий сброс нельзя надёжно отличить от одновременного отказа всех узлов. ${lastSuccess}`};
+  }
+  // A manual failure is a separate, timestamped availability observation.
+  // Use it only when URLTest has no successful history for this profile;
+  // a newer successful URLTest sample must take precedence.
+  if(
+    availability?.status==='unknown'&&
+    availability?.reason==='no_successful_history'&&
+    manualSample?.reachable===false&&
+    manualSample?.first_failed_at
+  ){
+    const failedAt=manualSample.first_failed_at;
+    const failedEpoch=Date.parse(failedAt);
+    const sampleEpoch=Date.parse(sample?.observed_at||'');
+    const hasNewerSuccessfulUrltest=
+      typeof sample?.delay_ms==='number'&&
+      Number.isFinite(sample.delay_ms)&&
+      sample.delay_ms>0&&
+      Number.isFinite(sampleEpoch)&&
+      Number.isFinite(failedEpoch)&&
+      sampleEpoch>failedEpoch;
+    if(!hasNewerSuccessfulUrltest){
+      const seconds=vlessMeasurementAgeSeconds(failedAt)??manualSample.unavailable_seconds??0;
+      const failures=Math.max(1,Number(manualSample.consecutive_failures)||1);
+      const lastChecked=manualSample.last_checked_at
+        ?`Последняя ручная проверка: ${formatVlessTimestamp(manualSample.last_checked_at)}`
+        :'Время последней ручной проверки неизвестно';
+      const lastSuccess=manualSample.last_success_at
+        ?`Последний успешный результат ручной проверки: ${formatVlessTimestamp(manualSample.last_success_at)}`
+        :'Последний успешный результат ручной проверки не сохранён';
+      return {
+        source:'manual-outage',
+        delay_ms:null,
+        display:`Нет ответа по ручной проверке · ${formatVlessDuration(seconds)}`,
+        details:`Первая неудачная ручная проверка BRUME 3: ${formatVlessTimestamp(failedAt)} · неудачных проверок подряд: ${failures} · ${lastChecked} · ${lastSuccess} · отсчёт начинается с обнаружения отказа, а не с доказанного начала сетевого сбоя`
+      };
+    }
+  }
+  if((!sample||sampleIsManual)&&manualSample?.last_checked_at){
+    const age=vlessMeasurementAgeSeconds(manualSample.last_checked_at);
+    const limit=vlessIntervalSeconds(interval);
+    const previous=manualSample.reachable===true&&typeof manualSample.delay_ms==='number'?`${Math.round(manualSample.delay_ms)} мс`:'нет ответа';
+    if(age!==null&&limit!==null&&age<=limit){
+      const delay=manualSample.reachable===true&&typeof manualSample.delay_ms==='number'&&Number.isFinite(manualSample.delay_ms)?Math.round(manualSample.delay_ms):null;
+      return {source:'manual',delay_ms:delay,display:`Ручная проверка: ${vlessDelay(profile.id)}`,details:vlessDelayDetails(profile.id)};
+    }
+    const ageLabel=age===null?'возраст неизвестен':`${formatVlessDuration(age)} назад`;
+    return {source:'manual-stale',delay_ms:null,display:`Старая ручная проверка · ${ageLabel}`,details:`Последняя ручная проверка BRUME 3: ${previous} · ${formatVlessTimestamp(manualSample.last_checked_at)} · не подтверждает текущее состояние сервера`};
+  }
+  if(sample&&!sampleIsManual){
+    const delay=typeof sample.delay_ms==='number'&&Number.isFinite(sample.delay_ms)&&sample.delay_ms>0?Math.round(sample.delay_ms):null;
+    // If sing-box has no numeric URLTest result, use the persisted BRUME 3
+    // availability check. A successful URLTest measurement always wins.
+    const manualHistoryNote=delay===null&&manualSample?.last_checked_at?` · последняя ручная проверка ${formatVlessTimestamp(manualSample.last_checked_at)} не подтверждает текущую доступность`:'';
+    const measuredAt=sample.observed_at||null;
+    const age=measuredAt?vlessMeasurementAgeSeconds(measuredAt):null;
+    const limit=vlessIntervalSeconds(interval);
+    let details='URLTest · sing-box: время измерения неизвестно · свежесть неизвестна';
+    if(measuredAt){
+      const timeLabel=`Измерено ${formatVlessTimestamp(measuredAt)}`;
+      if(age===null)details=`${timeLabel} · возраст неизвестен`;
+      else if(limit!==null&&age>limit)details=`${timeLabel} · возраст ${formatVlessDuration(age)} · УСТАРЕЛО: старше интервала URLTest (${interval})`;
+      else if(limit!==null)details=`${timeLabel} · возраст ${formatVlessDuration(age)} · актуально`;
+      else details=`${timeLabel} · возраст ${formatVlessDuration(age)} · свежесть неизвестна`;
+    }
+    details+=manualHistoryNote;
+    if(delay===null){
+      details+=' · нет числовой задержки';
+      if(!manualSample?.last_checked_at){
+        details+=' · учёт простоя на BRUME 3 начнётся после нажатия «Проверить задержки»';
+      }
+    }
+    return {source:'urltest',delay_ms:delay,display:delay===null?'URLTest · sing-box: нет измерения':`URLTest · sing-box: ${delay} мс`,details};
+  }
+  if(manualSample?.last_checked_at){
+    const delay=manualSample.reachable===true&&typeof manualSample.delay_ms==='number'&&Number.isFinite(manualSample.delay_ms)?Math.round(manualSample.delay_ms):null;
+    return {source:'manual',delay_ms:delay,display:`Ручная проверка: ${vlessDelay(profile.id)}`,details:vlessDelayDetails(profile.id)};
+  }
+  return {source:null,delay_ms:null,display:'Нет измерений',details:sampleIsManual?'Недавний результат ручной проверки исключён из URLTest; ожидается следующий автоматический замер':'Нет измерения в снимке API sing-box'};
+}
+function renderVlessActiveMeasurement(){
+  const v=state.vless||{};
+  const profiles=Array.isArray(v.profiles)?v.profiles:[];
+  const activeId=String(v.active_outbound||'').match(/^vless-profile-([1-9][0-9]*)$/);
+  const active=activeId?profiles.find(p=>p.id===Number(activeId[1])):null;
+  const activeRuntimeConfirmed=v.running===true&&Boolean(active||v.active_server_address);
+  const liveTag=activeRuntimeConfirmed?String(v.active_outbound||''):'';
+  const current=state.vlessSelectionHistory?.current||null;
+  const activeMeasurement=$('vlessActiveMeasurement');
+  if(!activeMeasurement)return;
+  if(!v.running)activeMeasurement.textContent='Последняя проверка задержки: sing-box остановлен';
+  else if(!liveTag)activeMeasurement.textContent='Задержка URLTest не показана: активный узел не подтверждён';
+  else if(!current)activeMeasurement.textContent='Задержка URLTest: снимок измерений недоступен';
+  else if(String(current.active_outbound||'')!==liveTag)activeMeasurement.textContent='Задержка URLTest не показана: снимок не совпадает с активным сервером';
+  else activeMeasurement.textContent=vlessCurrentUrltestMeasurement(current);
+}
+
+function renderVless(){
+  const v=state.vless||{};const profiles=Array.isArray(v.profiles)?v.profiles:[];const mode=v.traffic_mode||state.status?.traffic_mode||'unknown';
+  const activeId=String(v.active_outbound||'').match(/^vless-profile-([1-9][0-9]*)$/);const active=activeId?profiles.find(p=>p.id===Number(activeId[1])):null;
+  const desiredMode=v.desired_selection_mode||v.selection_mode||'unknown';
+  const desiredProfileId=v.desired_profile_id==null?null:Number(v.desired_profile_id);
+  const desiredProfile=desiredProfileId==null?null:profiles.find(p=>p.id===desiredProfileId);
+  const selectionPending=v.selection_pending===true;
+  const routeHealthy=mode==='vless'&&v.lan_route_healthy===true;
+  const directNotice=state.dirty
+    ? 'Есть неприменённые изменения Smart Routing. Текущие runtime-правила могут отличаться от списка; нажмите «Применить».'
+    : 'Активные DIRECT-правила Smart Routing направляют совпадающие ресурсы напрямую через WAN.';
+  $('vlessInstalled').textContent=v.installed?'Подготовлен':'Не установлен';$('vlessRunning').textContent=v.running?'Запущен':'Остановлен';$('vlessEnabledCount').textContent=`${v.enabled_count||0} / ${v.profile_limit||50}`;$('vlessLanMode').textContent=mode==='vless'?(v.lan_route_healthy?'Включён · интерфейс OK':'Режим выбран · маршрут не подтверждён'):mode==='unknown'?'Неизвестен':'Не включён';
+  const profilesToggle=$('vlessProfilesToggle');if(profilesToggle){profilesToggle.setAttribute('aria-expanded',state.vlessProfilesExpanded?'true':'false');profilesToggle.textContent=state.vlessProfilesExpanded?'Скрыть список серверов':`Показать все серверы (${(v.profiles||[]).length})`;}const profilesDisclosure=$('vlessProfilesDisclosure');if(profilesDisclosure)profilesDisclosure.style.display=state.vlessProfilesExpanded?'':'none';
+  document.querySelectorAll('[data-mode]').forEach(button=>{button.classList.toggle('active',button.dataset.mode===mode);button.setAttribute('aria-pressed',button.dataset.mode===mode?'true':'false');button.disabled=!!state.vlessBusy||button.dataset.mode===mode});
+  const busyIds=['vlessImportButton','vlessDelayButton','vlessAutoBannerButton','vlessSettingsButton','vlessPrepareButton','vlessApplyButton','vlessStopButton'];busyIds.forEach(id=>{const button=$(id);if(button)button.disabled=!!state.vlessBusy});
+  if($('vlessDelayButton'))$('vlessDelayButton').disabled=!!state.vlessBusy||!v.running;
+  if($('vlessAutoBannerButton')){const autoButton=$('vlessAutoBannerButton');autoButton.disabled=!!state.vlessBusy||!v.running||desiredMode==='auto';autoButton.textContent=desiredMode==='auto'?(selectionPending?'Автовыбор ожидает применения':v.selection_mode==='auto'?'Автовыбор активен':'Автовыбор не подтверждён'):'Выбрать автовыбор';autoButton.style.display=desiredMode==='auto'&&!selectionPending&&v.selection_mode==='auto'?'none':'';}
+  if($('vlessStopButton'))$('vlessStopButton').disabled=!!state.vlessBusy||!v.running;
+  if($('vlessApplyButton'))$('vlessApplyButton').disabled=!!state.vlessBusy||!v.enabled_count;
+  if($('vlessPrepareButton'))$('vlessPrepareButton').disabled=!!state.vlessBusy||!v.enabled_count;
+  $('vpnModeNotice').className=mode==='unknown'?'vless-note':mode==='vless'?(v.lan_route_healthy&&!state.dirty?'vless-note vless-ok-note':'vless-note vless-error-note'):'vless-note';$('vpnModeNotice').textContent=mode==='vless'?`${routeHealthy?'Основной маршрут LAN выбран через VLESS; процесс sing-box и TUN-интерфейс доступны.':'VLESS выбран в runtime-mode, но состояние sing-box/TUN не подтверждено.'} ${directNotice} IPv6-трафик LAN блокируется до отдельной реализации и проверки.`:mode==='vpn'?`Основной маршрут LAN направлен через AmneziaWG. ${directNotice}`:mode==='wan'?`Основной маршрут LAN — WAN напрямую. ${state.dirty?'Есть неприменённые изменения Smart Routing.':'Исключения Smart Routing сохранены.'}`:'Не удалось определить активный режим из runtime-mode.';
+  if(state.vlessError){$('vlessNotice').className='vless-note vless-error-note';$('vlessNotice').textContent=state.vlessError}
+  else if(mode==='vless'&&!v.lan_route_healthy){$('vlessNotice').className='vless-note vless-error-note';$('vlessNotice').textContent='В runtime-mode выбран VLESS, но sing-box или интерфейс maxvpn0 не подтверждён. Состояние VLESS не подтверждено; проверьте runtime-mode, процесс и интерфейс. Не перезапускайте службу вручную до проверки.'}
+  else if(v.config_dirty){$('vlessNotice').className='vless-note';$('vlessNotice').textContent='Список серверов или параметры отличаются от установленной конфигурации. Нажмите «Применить и запустить / перезапустить», чтобы проверить и безопасно применить изменения.'}
+  else if(state.dirty){$('vlessNotice').className='vless-note';$('vlessNotice').textContent='Есть неприменённые изменения Smart Routing. Примените их в разделе Smart Routing; текущие runtime-правила могут отличаться от списка.'}
+  else if(!v.installed){$('vlessNotice').className='vless-note';$('vlessNotice').textContent='sing-box не установлен или его сервис/конфигурация не найдены. Импортированные профили сохраняются локально; для запуска требуется установленный сервис MaxVPN sing-box.'}
+  else{$('vlessNotice').className='vless-note vless-ok-note';$('vlessNotice').textContent=mode==='vless'&&v.running?'sing-box запущен. Основной маршрут LAN направлен через VLESS; активные DIRECT-исключения Smart Routing идут напрямую через WAN. IPv6-трафик LAN блокируется защитной политикой.':v.running?'sing-box запущен, но основной маршрут LAN сейчас не направлен через VLESS.':'sing-box остановлен. Применение и запуск не меняют DIRECT-правила.'}
+  const activeRuntimeConfirmed=v.running===true&&Boolean(active||v.active_server_address);
+  const activeCountryProfile=active||{address:v.active_server_address,server_name:v.active_server_name,name:v.active_server_name};
+  const activeCountry=activeRuntimeConfirmed?vlessCountry(activeCountryProfile):null;
+  $('vlessActiveName').innerHTML=activeCountry?`<span class="vless-country-label">${vlessCountryFlagHtml(activeCountryProfile)}<span class="vless-country-label-text">${vlessEscape(activeCountry.name)}</span></span>`:(v.running?'Активный сервер не подтверждён':'sing-box остановлен');
+  $('vlessActiveAddress').textContent=activeRuntimeConfirmed?(active?`${active.address}:${active.port}`:`${v.active_server_address}:${v.active_server_port||'—'}`):(v.running?'Адрес активного сервера не подтверждён':'—');
+  renderVlessActiveMeasurement();
+  $('vlessSelectionMode').textContent=!v.running?'sing-box остановлен':(v.selection_mode==='manual'?'Ручной режим активен':v.selection_mode==='auto'?'Автовыбор активен':'Режим не подтверждён');
+  const pendingPanel=$('vlessSelectionPending');if(pendingPanel){if(selectionPending){const activeCountryForNotice=active?vlessCountry(active):null;const currentLabel=!v.running?'sing-box остановлен; активного сервера нет':active?`${activeCountryForNotice.flag} ${activeCountryForNotice.name} (${active.address}:${active.port})`:v.active_server_address?`${v.active_server_address}:${v.active_server_port||'—'}`:'активный узел не подтверждён';const currentMode=!v.running?'sing-box остановлен; режим выбора не активен':v.selection_mode==='manual'?'фактически активен ручной режим':v.selection_mode==='auto'?'фактически активен автовыбор':'фактический режим не подтверждён';const desiredLabel=desiredMode==='manual'?(desiredProfile?`${desiredProfile.name} (${desiredProfile.address}:${desiredProfile.port})`:`ручной профиль №${desiredProfileId??'не определён'}`):'автовыбор по URLTest';pendingPanel.className='vless-note';pendingPanel.style.display='';pendingPanel.textContent=!v.running?`Выбранное действие сохранено для следующего запуска: ${desiredLabel}. Сейчас sing-box остановлен, поэтому новый выбор ещё не действует.`:desiredMode==='manual'?`Ожидает применения: ${desiredLabel}. Сейчас ${currentLabel}; ${currentMode}. До нажатия «Применить и запустить / перезапустить» фактический выбор sing-box не меняется.`:`Ожидает применения: возврат к автоматическому выбору URLTest. Сейчас ${currentLabel}; ${currentMode}. Нажмите «Применить и запустить / перезапустить», чтобы включить автовыбор.`;}else{pendingPanel.style.display='none';pendingPanel.textContent='';}}
+  const settings=v.settings||{};if($('vlessInterval')&&document.activeElement!==$('vlessInterval'))$('vlessInterval').value=settings.urltest_interval||'3m';if($('vlessTolerance')&&document.activeElement!==$('vlessTolerance'))$('vlessTolerance').value=settings.urltest_tolerance_ms??50;const killSwitchOn=settings.wan_fallback_enabled!==true;const killSwitchButton=$('vlessKillSwitchButton');if(killSwitchButton){killSwitchButton.textContent='Kill Switch: '+(killSwitchOn?'ON':'OFF');killSwitchButton.className='btn '+(killSwitchOn?'primary':'danger');killSwitchButton.setAttribute('aria-pressed',String(killSwitchOn));killSwitchButton.disabled=state.vlessBusy||!state.vless;}const killSwitchState=$('vlessKillSwitchState');if(killSwitchState)killSwitchState.textContent=killSwitchOn?'ON — LAN остаётся заблокированным при отказе VPN.':'OFF — при отказе VPN разрешён переход LAN напрямую через WAN.';const fallbackStatus=$('vlessWanFallbackStatus');if(fallbackStatus){const fallbackActive=v.wan_fallback_active===true&&mode==='wan';fallbackStatus.style.display=fallbackActive?'':'none';fallbackStatus.textContent=fallbackActive?'WAN fallback активен: основной маршрут LAN сейчас идёт напрямую через обычный WAN, вне VLESS и AmneziaWG. При восстановлении закреплённого профиля или любого профиля AUTO после двух проверок будет выполнен возврат к VLESS.':'';}
+  renderVlessProfiles();
+  renderVlessSelectionHistory();
+}
+function renderVlessProfiles(){
+  const v=state.vless||{};const desiredMode=v.desired_selection_mode||v.selection_mode||'unknown';const desiredProfileId=v.desired_profile_id==null?null:Number(v.desired_profile_id);const selectionPending=v.selection_pending===true;let profiles=(v.profiles||[]).slice();const q=($('vlessSearch')?.value||'').trim().toLowerCase();const filter=$('vlessFilter')?.value||'all';
+  profiles.sort((a,b)=>{const da=vlessProfileMeasurement(a).delay_ms,db=vlessProfileMeasurement(b).delay_ms;const aMeasured=typeof da==='number',bMeasured=typeof db==='number';if(aMeasured&&bMeasured)return da-db||Number(a.id)-Number(b.id);if(aMeasured)return -1;if(bMeasured)return 1;return Number(a.id)-Number(b.id)});
+  profiles=profiles.filter(p=>{const searchable=[p.name,p.address,p.server_name,p.fingerprint].join(' ').toLowerCase();if(q&&!searchable.includes(q))return false;const measurement=vlessProfileMeasurement(p);if(filter==='enabled'&&!p.enabled)return false;if(filter==='disabled'&&p.enabled)return false;if(filter==='reachable'&&typeof measurement.delay_ms!=='number')return false;if(filter==='failed'&&measurement.source!=='manual-outage')return false;if(filter==='stale'&&!['manual-outage-stale','manual-stale','urltest-stale'].includes(measurement.source))return false;return true});
+  $('vlessProfileCount').textContent=`Показано ${profiles.length} из ${(v.profiles||[]).length}. Сортировка использует URLTest · sing-box; ручная проверка — резервный результат, когда отдельного замера URLTest нет.`;
+  if(!profiles.length){$('vlessProfilesBody').innerHTML='<tr><td colspan="6">Серверы не найдены. Импортируйте ссылки VLESS или проверьте фильтр.</td></tr>';return}
+  const active=String(v.active_outbound||'');
+  $('vlessProfilesBody').innerHTML=profiles.map((p,i)=>{const measurement=vlessProfileMeasurement(p);const latency=state.vlessDelays?.[p.id];const availability=state.vlessSelectionHistory?.profile_availability?.[String(p.id)];const staleMeasurement=['manual-outage-stale','manual-stale','urltest-stale'].includes(measurement.source);const badge=!p.enabled?'<span class="vless-badge off">Отключён</span>':measurement.source==='manual-outage'?'<span class="vless-badge bad">Нет ответа по ручной проверке</span>':staleMeasurement?'<span class="vless-badge off">Проверка устарела</span>':availability?.status==='unknown'&&availability?.reason==='history_reset'&&measurement.source!=='urltest'?'<span class="vless-badge off">Нет данных URLTest</span>':measurement.source==='urltest-monitor'?'<span class="vless-badge bad">Нет успешного замера</span>':typeof measurement.delay_ms==='number'?'<span class="vless-badge">Есть измерение</span>':'<span class="vless-badge off">Нет актуального замера</span>';const isActive=active===`vless-profile-${p.id}`;const isDesired=desiredMode==='manual'&&desiredProfileId===p.id;const pendingBadge=isDesired&&selectionPending?'<span class="vless-badge pending">Будет выбран после применения</span> ':'';const params=[p.security==='reality'?'REALITY':'TLS/без TLS',p.flow||'без flow',p.server_name?'SNI: '+p.server_name:''].filter(Boolean).join(' · ');const country=vlessCountry(p);const selectLabel=isDesired&&selectionPending?'Выбрано к применению':isActive&&v.selection_mode==='manual'?'Активен':'Выбрать к применению';const selectDisabled=state.vlessBusy||!v.running||!p.enabled||(isDesired&&selectionPending)||(isActive&&v.selection_mode==='manual');return `<tr><td>${i+1}</td><td><div class="vless-country${country.unknown?' unknown':''}" title="Страна определяется по префиксу имени сервера">${vlessCountryFlagHtml(p)} <span>${vlessEscape(country.name)}</span></div><strong>${vlessEscape(p.name)}</strong><div class="muted">${vlessEscape(p.address)}:${p.port}</div></td><td>${vlessEscape(params||'—')}</td><td>${isActive?'<span class="vless-badge">Сейчас используется</span> ':''}${pendingBadge}${badge}</td><td title="${vlessEscape(measurement.details)}"><strong>${vlessEscape(measurement.display)}</strong><div class="muted">${vlessEscape(measurement.details)}</div></td><td><div class="vless-profile-actions"><button class="btn ghost" onclick="selectVless(${p.id})" ${selectDisabled?'disabled':''}>${selectLabel}</button><button class="btn ghost" onclick="toggleVless(${p.id},${!p.enabled})" ${state.vlessBusy?'disabled':''}>${p.enabled?'Отключить':'Включить'}</button><button class="btn ghost" onclick="renameVless(${p.id})" ${state.vlessBusy?'disabled':''}>Имя</button><button class="btn danger" onclick="deleteVless(${p.id})" ${state.vlessBusy?'disabled':''}>Удалить</button></div></td></tr>`}).join('');
+}
+function renderVlessSelectionHistory(){
+  const panel=$('vlessSelectionHistoryPanel');if(!panel)return;
+  const journal=state.vlessSelectionHistory||{};
+  const allEvents=Array.isArray(journal.events)?journal.events.slice().reverse():[];
+  const visibleCount=Math.max(5,Number(state.vlessHistoryVisibleCount)||5);
+  const events=allEvents.slice(0,visibleCount);
+  const profiles=Array.isArray(state.vless?.profiles)?state.vless.profiles:[];
+  const label=tag=>{const match=String(tag||'').match(/^vless-profile-([1-9][0-9]*)$/);const profile=match?profiles.find(item=>Number(item.id)===Number(match[1])):null;return profile?profile.name:(tag||'—')};
+  const displayLabel=tag=>{const match=String(tag||'').match(/^vless-profile-([1-9][0-9]*)$/);const profile=match?profiles.find(item=>Number(item.id)===Number(match[1])):null;if(!profile)return tag||'—';const country=vlessCountry(profile);return `${country.flag} ${country.name} (${profile.address}:${profile.port})`;};
+  const monitor=journal.monitor||{};
+  const snapshot=journal.current||null;
+  const runtime=state.vless||{};
+  const running=runtime.running===true;
+  const liveTag=running?(runtime.active_outbound||null):null;
+  const liveMode=running?(runtime.selection_mode||'—'):'остановлен';
+  const snapshotTag=snapshot?.active_outbound||null;
+  const activeMatches=!!liveTag&&!!snapshotTag&&liveTag===snapshotTag;
+  const modeMatches=!snapshot?.selection_mode||!runtime.selection_mode||snapshot.selection_mode===runtime.selection_mode;
+  const snapshotMatchesRuntime=activeMatches&&modeMatches;
+  const status=monitor.last_error?`Нет связи с монитором: ${vlessEscape(monitor.last_error)}`:monitor.last_success_at?`Мониторинг работает · опрос каждые ${Number(monitor.interval_seconds)||15} с`:'Ожидание первого измерения';
+  const actualLabel=running?(liveTag?displayLabel(liveTag):runtime.active_server_address?`${runtime.active_server_address}:${runtime.active_server_port||443}`:'Активный узел не подтверждён'):'sing-box остановлен — активного узла нет';
+  const currentSummary=`<div class="vless-history-current"><div class="vless-history-current-title">Фактическое состояние runtime</div><div class="vless-history-current-main">${vlessEscape(actualLabel)}</div><div class="vless-history-current-meta">Режим: ${vlessEscape(liveMode)}${running&&runtime.selected_outbound?` · выход: ${vlessEscape(runtime.selected_outbound)}`:''}</div></div>`;
+  let snapshotSummary='';
+  if(!running){
+    snapshotSummary='<p class="muted">sing-box остановлен. Сохранённый снимок URLTest не считается фактическим активным состоянием.</p>';
+  }else if(!snapshot){
+    snapshotSummary='<p class="muted">Текущий снимок URLTest недоступен; задержка активного узла не подтверждена.</p>';
+  }else if(!snapshotMatchesRuntime){
+    snapshotSummary=`<div class="vless-history-warning"><strong>Снимок истории не совпадает с runtime.</strong> В снимке монитора: ${vlessEscape(displayLabel(snapshotTag))}, режим ${vlessEscape(snapshot.selection_mode||'—')}; фактически сейчас: ${vlessEscape(actualLabel)}, режим ${vlessEscape(liveMode)}. Задержка из старого снимка не приписывается текущему серверу.</div>`;
+  }else{
+    snapshotSummary=`<p>${vlessEscape(vlessCurrentUrltestMeasurement(snapshot))} · допуск ${snapshot.urltest_tolerance_ms==null?'—':Number(snapshot.urltest_tolerance_ms)+' мс'}</p>`;
+  }
+  const eventsHtml=events.length?`<div class="vless-history-events">${events.map(event=>{
+    const modeEvent=['selection_mode_changed','manual_selection'].includes(event.diagnostic_status);
+    const eventType=modeEvent?'Ручной выбор / смена режима':'Смена активного узла';
+    const previousDelay=event.previous_delay_ms==null?'нет измерения':`${Number(event.previous_delay_ms)} мс`;
+    const activeDelay=event.active_delay_ms==null?'нет измерения':`${Number(event.active_delay_ms)} мс`;
+    const interval=vlessEscape(event.urltest_interval||'—');
+    const tolerance=event.urltest_tolerance_ms==null?'—':Number(event.urltest_tolerance_ms)+' мс';
+    const details=`<div>Время измерения задержки: предыдущий сервер — ${vlessEscape(event.previous_delay_observed_at?formatVlessTimestamp(event.previous_delay_observed_at):'время неизвестно')}; новый сервер — ${vlessEscape(event.active_delay_observed_at?formatVlessTimestamp(event.active_delay_observed_at):'время неизвестно')}</div><div>Возраст при обнаружении: предыдущий — ${vlessEscape(selectionAgeLabel(event.previous_delay_age_seconds))}; новый — ${vlessEscape(selectionAgeLabel(event.active_delay_age_seconds))}; ${vlessEscape(selectionFreshnessLabel(event.measurement_freshness))}</div><div><strong>${vlessEscape(event.diagnostic_origin==='retrospective'?'Ретроспективная оценка':'Диагностика')} — ${vlessEscape(selectionDiagnosticLabel(event.diagnostic_status))}</strong>: ${vlessEscape(event.diagnostic_details||event.reason_details||'Причина не установлена')}</div>`;
+    return `<article class="vless-history-event"><div class="vless-history-event-head"><strong>${vlessEscape(formatVlessTimestamp(event.observed_at))}</strong><span class="vless-history-event-type">${eventType}</span></div><div class="vless-history-event-route">${vlessEscape(label(event.previous_outbound))} → <strong>${vlessEscape(label(event.active_outbound))}</strong></div><div class="vless-history-event-metrics">Задержка: ${previousDelay} → ${activeDelay} · интервал ${interval} · допуск ${tolerance}</div><details class="vless-history-detail"><summary>Подробности измерений и диагностики</summary><div class="vless-history-detail-body">${details}</div></details></article>`;
+  }).join('')}</div>`:'<p class="muted">После запуска журнала переключения ещё не зафиксированы.</p>';
+  const expanded=state.vlessHistoryExpanded;
+  const paginationHtml=expanded&&allEvents.length>5?`<div class="vless-history-pagination" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px"><p class="muted" style="margin:0">Показано ${events.length} из ${allEvents.length} событий</p>${events.length<allEvents.length?`<button type="button" class="btn ghost" onclick="showMoreVlessSelectionHistory()">Показать ещё ${Math.min(5,allEvents.length-events.length)}</button>`:''}</div>`:'';
+  panel.innerHTML=`<section class="vless-batch-results vless-selection-history"><div class="vless-history-heading"><div><h3>История выбора сервера</h3><p class="muted">${status} · журнал наблюдаемых изменений. Точная причина переключения показывается только когда хватает актуальных измерений.</p></div><button type="button" class="btn ghost" aria-expanded="${expanded?'true':'false'}" aria-controls="vlessSelectionHistoryContent" onclick="toggleVlessSelectionHistory()">${expanded?'Скрыть историю':`Показать историю (${allEvents.length})`}</button></div><div id="vlessSelectionHistoryContent" class="vless-history-content" style="display:${expanded?'':'none'}">${currentSummary}${snapshotSummary}${state.vlessSelectionHistoryError?`<p class="muted">${vlessEscape(state.vlessSelectionHistoryError)}</p>`:''}${eventsHtml}${paginationHtml}</div></section>`;
+  renderVlessUrltestMeasurements();
+}
+function toggleVlessSelectionHistory(){if(state.vlessHistoryExpanded)state.vlessHistoryVisibleCount=5;state.vlessHistoryExpanded=!state.vlessHistoryExpanded;renderVlessSelectionHistory()}
+function showMoreVlessSelectionHistory(){const total=Array.isArray(state.vlessSelectionHistory?.events)?state.vlessSelectionHistory.events.length:0;state.vlessHistoryVisibleCount=Math.min(total,(Number(state.vlessHistoryVisibleCount)||5)+5);renderVlessSelectionHistory()}
+function toggleVlessProfilesList(){state.vlessProfilesExpanded=!state.vlessProfilesExpanded;renderVless()}
+
+
+function renderVlessUrltestMeasurements(){
+  const panel=$('vlessUrltestMeasurementsPanel');if(!panel)return;
+  const journal=state.vlessSelectionHistory||{};
+  const current=journal.current||null;
+  const profiles=(state.vless?.profiles||[]).filter(profile=>profile.enabled);
+  const interval=current?.urltest_interval||state.vless?.settings?.urltest_interval||null;
+  const tolerance=current?.urltest_tolerance_ms;
+  const running=state.vless?.running===true;
+  // Do not carry a previous monitor snapshot forward as the active server after sing-box stops.
+  const active=running?(state.vless?.active_outbound||current?.active_outbound||null):null;
+  const limit=vlessIntervalSeconds(interval);
+  const sorted=profiles.slice().sort((a,b)=>{
+    const da=vlessProfileMeasurement(a)?.delay_ms,db=vlessProfileMeasurement(b)?.delay_ms;
+    const aDelay=typeof da==='number'&&Number.isFinite(da)?da:Number.POSITIVE_INFINITY;
+    const bDelay=typeof db==='number'&&Number.isFinite(db)?db:Number.POSITIVE_INFINITY;
+    return aDelay-bDelay||Number(a.id)-Number(b.id);
+  });
+  const cards=sorted.map(profile=>{
+    const tag=`vless-profile-${profile.id}`;
+    const {sample,sampleIsManual,manualSample}=vlessUrltestSampleState(profile);
+    const measurement=vlessProfileMeasurement(profile)||{};
+    const source=measurement.source||'unknown';
+    const delay=typeof measurement.delay_ms==='number'&&Number.isFinite(measurement.delay_ms)&&measurement.delay_ms>0?Math.round(measurement.delay_ms):null;
+    const isManual=source==='manual';
+    const measuredAt=isManual?(manualSample?.last_checked_at||null):(sample?.observed_at||null);
+    const age=measuredAt?vlessMeasurementAgeSeconds(measuredAt):null;
+    let ageLabel='Нет измерения в снимке API sing-box';
+    let stale=false;
+    if(isManual){
+      ageLabel=measuredAt&&age!==null
+        ?`Ручная проверка · измерено ${formatVlessTimestamp(measuredAt)} · возраст ${formatVlessDuration(age)} · актуально`
+        :'Ручная проверка · время измерения неизвестно';
+    }else if(source==='manual-stale'||source==='manual-outage'||source==='urltest-monitor'){
+      ageLabel=measurement.display||'Нет актуального измерения';
+      stale=true;
+    }else if(sample&&!sampleIsManual){
+      if(measuredAt){
+        const timeLabel=`Измерено ${formatVlessTimestamp(measuredAt)}`;
+        if(age===null)ageLabel=`${timeLabel} · возраст неизвестен`;
+        else if(limit!==null&&age>limit){ageLabel=`${timeLabel} · возраст ${formatVlessDuration(age)} · УСТАРЕЛО`;stale=true;}
+        else if(limit!==null)ageLabel=`${timeLabel} · возраст ${formatVlessDuration(age)} · актуально`;
+        else ageLabel=`${timeLabel} · возраст ${formatVlessDuration(age)} · свежесть неизвестна`;
+        if(delay===null)ageLabel+=` · нет числовой задержки`;
+      }else{
+        ageLabel=measurement.display||'URLTest · sing-box: время измерения неизвестно · свежесть неизвестна';
+      }
+    }else if(measurement.display){
+      ageLabel=measurement.display;
+      stale=source==='manual-stale'||source==='manual-outage'||source==='urltest-monitor';
+    }
+    const ageTitle=measurement.details||ageLabel;
+    const country=vlessCountry(profile);
+    const isActive=!!active&&active===tag;
+    const title=`${profile.address||profile.name||'Сервер'}:${profile.port||443}`;
+    return `<article class="vless-urltest-card${isActive?' vless-urltest-card-active':''}" title="${vlessEscape(title)}"><div class="vless-urltest-server"><div class="vless-urltest-country">${vlessCountryFlagHtml(profile)} <span>${vlessEscape(country.name)}</span></div><div class="vless-urltest-address">${vlessEscape(profile.address||profile.name||'—')}:${vlessEscape(profile.port||443)}</div><div class="vless-urltest-age${stale?' stale':''}" title="${vlessEscape(ageTitle)}">${vlessEscape(ageLabel)}</div></div><div class="vless-urltest-value"><div class="vless-urltest-delay${delay===null?' vless-urltest-no-sample':''}">${delay===null?'—':`${delay} мс`}</div>${isActive?'<span class="vless-urltest-active-badge">Активен</span>':''}</div></article>`;
+  }).join('');
+  const activeProfile=active?(state.vless?.profiles||[]).find(profile=>active===`vless-profile-${profile.id}`):null;
+  const activeLabel=activeProfile?`${activeProfile.address}:${activeProfile.port}`:(active||'не определён');
+  const status=!running?'sing-box остановлен — активный сервер не подсвечивается':current?`Снимок API: ${formatVlessTimestamp(current.observed_at)} · режим: ${current.selection_mode||'—'} · активный узел: ${activeLabel}`:'Снимок API sing-box пока недоступен';
+  panel.innerHTML=`<section class="vless-urltest-panel"><div class="vless-urltest-head"><div><div class="vless-urltest-title">Измерения URLTest · sing-box</div><p class="vless-urltest-note">Серверы отсортированы по последнему доступному измерению. Если свежего URLTest нет, отображается последняя ручная проверка BRUME 3 с явной маркировкой; источники не смешиваются.</p></div><div><div class="vless-urltest-meta">Интервал: ${vlessEscape(interval||'неизвестен')} · допуск: ${tolerance==null?'—':Number(tolerance)+' мс'}</div><button type="button" class="btn ghost" style="margin-top:6px;padding:7px 10px;font-size:11px" onclick="refreshVlessSelectionHistory()">Обновить</button></div></div><p class="vless-urltest-snapshot">${vlessEscape(status)}</p>${state.vlessSelectionHistoryError?`<p class="vless-urltest-note">Ошибка чтения снимка: ${vlessEscape(state.vlessSelectionHistoryError)}</p>`:''}${cards?`<div class="vless-urltest-grid">${cards}</div>`:'<div class="vless-urltest-empty">Включённых серверов пока нет.</div>'}<p class="vless-urltest-note">Обновление перечитывает результаты API sing-box и истории ручных проверок BRUME 3; новую проверку не запускает, маршрут и выбранный сервер не меняет. «мс» — задержка, а не пропускная способность в Мбит/с.</p></section>`;
+}
+
+async function refreshVlessSelectionHistory(){
+  try{state.vlessSelectionHistory=await api('/api/appliance/v1/vless/selection-history');state.vlessSelectionHistoryError=null;}
+  catch(e){state.vlessSelectionHistoryError=e.message||'Журнал переключений недоступен';}
+  renderVlessActiveMeasurement();
+  if(state.vless)renderVlessProfiles();
+  renderVlessSelectionHistory();
+  if(state.vless)renderVlessProfiles();
+}
+
+async function refreshVless(){try{state.vless=await api('/api/appliance/v1/vless');try{const history=await api('/api/appliance/v1/vless/delays/history');applyVlessDelayHistory(history.results||[],true)}catch(historyError){console.warn('VLESS delay history unavailable',historyError)}try{state.vlessSelectionHistory=await api('/api/appliance/v1/vless/selection-history');state.vlessSelectionHistoryError=null}catch(selectionHistoryError){state.vlessSelectionHistoryError=selectionHistoryError.message||'Журнал переключений недоступен'}state.vlessError=null;render();}catch(e){state.vlessError=e.message;renderVless()}}
+async function setVpnMode(mode){const current=state.vless?.traffic_mode||'unknown';if(current===mode)return;if(!confirm(`Переключить основной маршрут LAN на режим ${({wan:'WAN',vpn:'AmneziaWG',vless:'VLESS + REALITY'})[mode]||mode}? DIRECT-исключения Smart Routing сохранятся.`))return;try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vpn/mode',{method:'POST',body:JSON.stringify({mode})});state.vless={...(state.vless||{}),...result};await refreshAll();alert(`Режим подтверждён: ${({wan:'WAN',vpn:'AmneziaWG',vless:'VLESS + REALITY'})[result.traffic_mode||mode]||mode}`)}catch(e){alert('Не удалось переключить режим: '+e.message);await refreshAll()}finally{state.vlessBusy=false;renderVless()}}
+async function importVlessProfiles(){const input=$('vlessImportSource').value.trim();if(!input){alert('Вставьте ссылки VLESS или выберите JSON-файл экспорта.');return}let payload;try{if(input.startsWith('{')){payload=JSON.parse(input);if(!payload.profiles&&!payload.sources){payload={sources:[input]}}}else{payload={sources:input.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}}}catch(e){alert('JSON не распознан: '+e.message);return}try{state.vlessBusy=true;renderVless();$('vlessImportButton').disabled=true;const result=await api('/api/appliance/v1/vless/import',{method:'POST',body:JSON.stringify(payload)});state.vlessDelays={};state.vless=await api('/api/appliance/v1/vless');render();alert(`Импорт завершён. Добавлено: ${result.imported||0}; обновлено: ${result.updated||0}; ошибок: ${result.failed||0}. Нажмите «Применить и запустить / перезапустить», чтобы применить список.`)}catch(e){alert('Импорт не выполнен: '+e.message)}finally{state.vlessBusy=false;$('vlessImportButton').disabled=false;renderVless()}}
+function loadVlessImportFile(event){const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{$('vlessImportSource').value=String(reader.result||'')};reader.onerror=()=>alert('Не удалось прочитать выбранный файл.');reader.readAsText(file)}
+async function testVlessDelays(){try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vless/delays',{method:'POST'});applyVlessDelayHistory(result.results||[],false);renderVlessProfiles();alert(`Проверка завершена: отвечают ${result.reachable||0} из ${result.total||0} включённых серверов.`)}catch(e){alert('Не удалось проверить задержки: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function selectVless(profileId){try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vless/select',{method:'POST',body:JSON.stringify({profile_id:profileId===undefined?null:profileId})});state.vless=result;await refreshAll();}catch(e){alert('Не удалось выбрать сервер: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function toggleVless(id,enabled){try{state.vlessBusy=true;renderVless();await api('/api/appliance/v1/vless/profiles/'+id,{method:'PATCH',body:JSON.stringify({enabled})});state.vless=await api('/api/appliance/v1/vless');}catch(e){alert('Не удалось изменить профиль: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function renameVless(id){const profile=(state.vless?.profiles||[]).find(p=>p.id===id);if(!profile)return;const name=prompt('Название VLESS-сервера',profile.name);if(name===null)return;try{state.vlessBusy=true;renderVless();await api('/api/appliance/v1/vless/profiles/'+id,{method:'PATCH',body:JSON.stringify({name})});state.vless=await api('/api/appliance/v1/vless')}catch(e){alert('Не удалось изменить название: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function deleteVless(id){const profile=(state.vless?.profiles||[]).find(p=>p.id===id);if(!profile||!confirm(`Удалить профиль «${profile.name}» из сохранённого списка? Установленная конфигурация изменится только после применения.`))return;try{state.vlessBusy=true;renderVless();await api('/api/appliance/v1/vless/profiles/'+id,{method:'DELETE'});state.vless=await api('/api/appliance/v1/vless')}catch(e){alert('Не удалось удалить профиль: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+if(!window.__maxvpnVlessDelayTicker){window.__maxvpnVlessDelayTicker=window.setInterval(()=>{if(!state.vlessBusy&&state.vless){if(Object.keys(state.vlessDelayHistory||{}).length)renderVlessProfiles();void refreshVlessSelectionHistory()}},30000)}
+
+async function toggleVlessKillSwitch(){if(!state.vless||state.vlessBusy)return;const currentFallbackEnabled=state.vless.settings?.wan_fallback_enabled===true;const nextFallbackEnabled=!currentFallbackEnabled;try{state.vlessBusy=true;renderVless();state.vless=await api('/api/appliance/v1/vless/settings',{method:'POST',body:JSON.stringify({wan_fallback_enabled:nextFallbackEnabled})})}catch(e){alert('Не удалось изменить Kill Switch: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function saveVlessSettings(){const settings={urltest_interval:$('vlessInterval').value,urltest_tolerance_ms:Number($('vlessTolerance').value)};try{state.vlessBusy=true;renderVless();state.vless=await api('/api/appliance/v1/vless/settings',{method:'POST',body:JSON.stringify(settings)});alert('Параметры URLTest сохранены. Интервал и допуск применятся после «Применить и запустить / перезапустить».')}catch(e){alert('Не удалось сохранить настройки: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function prepareVless(){try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vless/prepare',{method:'POST'});state.vless=result;await refreshAll();alert(result.running?'Конфигурация применена и sing-box перезапущен.':'Конфигурация проверена и сохранена. Процесс sing-box не запускался.')}catch(e){alert('Подготовка не выполнена: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function applyVless(){if(!confirm('Проверить и применить сохранённые изменения? Если sing-box работает, процесс будет перезапущен. До успешного завершения текущий сервер и режим выбора считаются неизменёнными. Резервная копия конфигурации будет сохранена.'))return;try{state.vlessBusy=true;renderVless();state.vless=await api('/api/appliance/v1/vless/apply',{method:'POST'});await refreshAll();if(state.vless?.selection_pending){alert('Конфигурация перезапущена, но фактический режим/профиль sing-box не совпал с выбранным. Проверьте состояние; интерфейс не будет считать выбор применённым.')}else{const selected=state.vless?.active_server_address?`${state.vless.active_server_address}:${state.vless.active_server_port||'—'}`:state.vless?.active_outbound||'не определён';alert(`Изменения применены и подтверждены работающим sing-box. Фактический сервер: ${selected}. Режим: ${state.vless?.selection_mode==='manual'?'ручной':state.vless?.selection_mode==='auto'?'автовыбор':'не подтверждён'}.`)}}catch(e){alert('Не удалось применить конфигурацию: '+e.message);await refreshAll()}finally{state.vlessBusy=false;renderVless()}}
+async function stopVless(){if(!confirm('Остановить sing-box? Если LAN сейчас идёт через VLESS, приложение сначала переключит маршрутизацию на WAN.'))return;try{state.vlessBusy=true;renderVless();state.vless=await api('/api/appliance/v1/vless/stop',{method:'POST'});await refreshAll();alert('sing-box остановлен. Проверьте текущий режим LAN.')}catch(e){alert('Не удалось остановить sing-box: '+e.message);await refreshAll()}finally{state.vlessBusy=false;renderVless()}}
+async function vpnAction(a){return setVpnMode(a==='stop'?'wan':'vpn')}
+
+async function addRule(){const target=$('rtTarget').value.trim();const type=$('rtType').value;const p=$('rtPriority').value.trim();const comment=$('rtComment').value.trim();if(!target)return;try{const body={target_type:type,target};if(p)body.priority=Number(p);if(comment)body.comment=comment;const created=await api('/api/appliance/v1/routing/rules',{method:'POST',body:JSON.stringify(body)});state.routing.rules=[...(state.routing.rules||[]),created].sort((a,b)=>a.priority-b.priority||a.id-b.id);$('rtTarget').value='';$('rtPriority').value='';$('rtComment').value='';await refreshRouting();render()}catch(e){alert(e.message)}}
+async function toggleRule(id,en){try{const updated=await api('/api/appliance/v1/routing/rules/'+id,{method:'PATCH',body:JSON.stringify({enabled:en})});state.routing.rules=state.routing.rules.map(x=>x.id===id?updated:x);await refreshRouting();render()}catch(e){alert(e.message)}}
+async function deleteRule(id){if(!confirm('Удалить правило?'))return;try{await api('/api/appliance/v1/routing/rules/'+id,{method:'DELETE'});state.routing.rules=state.routing.rules.filter(x=>x.id!==id);await refreshRouting();render()}catch(e){alert(e.message)}}
+
+function ensureRuleTestPanel(ruleId=null,sourceEl=null){
+
+  let row =
+    sourceEl?.closest?.('tr') || null;
+
+  if(!row && ruleId !== null){
+    row =
+      document.getElementById(
+        'rule-' + ruleId
+      );
+  }
+
+  if(
+    !row &&
+    window.__maxvpnRouteTestSourceRow
+  ){
+    row =
+      window.__maxvpnRouteTestSourceRow;
+  }
+
+  if(
+    !row ||
+    !row.parentNode
+  ){
+    return null;
+  }
+
+  window.__maxvpnRouteTestSourceRow =
+    row;
+
+  const panelId =
+    'ruleTestResult-' + String(ruleId);
+
+  let panel =
+    document.getElementById(panelId);
+
+  if(panel){
+    const wrapper =
+      panel.closest('tr.rule-test-row');
+
+    if(wrapper){
+      wrapper.style.display =
+        '';
+    }
+
+    return panel;
+  }
+
+  /*
+   * Одновременно показываем результат только
+   * для одного правила.
+   */
+  document
+    .querySelectorAll(
+      'tr.rule-test-row'
+    )
+    .forEach(x => x.remove());
+
+  const testRow =
+    document.createElement('tr');
+
+  testRow.className =
+    'rule-test-row';
+
+  testRow.dataset.ruleTestId =
+    String(ruleId ?? '');
+
+  const cell =
+    document.createElement('td');
+
+  cell.colSpan =
+    Math.max(
+      1,
+      row.children.length
+    );
+
+  const notice =
+    document.createElement('div');
+
+  notice.id =
+    panelId;
+
+  notice.className =
+    'notice rule-test-panel';
+
+  notice.style.display =
+    'none';
+
+  notice.style.marginTop =
+    '8px';
+
+  notice.style.marginBottom =
+    '8px';
+
+  cell.appendChild(
+    notice
+  );
+
+  testRow.appendChild(
+    cell
+  );
+
+  row.parentNode.insertBefore(
+    testRow,
+    row.nextSibling
+  );
+
+  return notice;
+}
+
+
+function routeTestDecisionLabel(
+  decision
+){
+  return {
+    direct:'DIRECT / WAN',
+    vpn:'VPN',
+    not_applied:'Не применено',
+    disabled:'Правило выключено',
+    unknown:'Не определён'
+  }[decision]||decision||'Не определён';
+}
+
+
+function routeTestDecisionClass(
+  decision
+){
+  return {
+    direct:'ok',
+    vpn:'warn',
+    not_applied:'warn',
+    disabled:'warn',
+    unknown:''
+  }[decision]||'';
+}
+
+
+function renderRuleTestResult(data){
+
+  const panel = ensureRuleTestPanel(data?.rule?.id ?? null);
+
+  if(!panel){
+    alert(
+      'Результат проверки:\\n'+
+      routeTestDecisionLabel(
+        data?.overall
+      )
+    );
+    return;
+  }
+
+  const rule=
+    data?.rule||{};
+
+  const configuration=
+    data?.configuration||{};
+
+  const resolution=
+    data?.resolution||{};
+
+  const runtime=
+    data?.runtime||{};
+
+  const destinations=
+    data?.destinations||[];
+
+  const overall=
+    data?.overall||'unknown';
+
+  const decisionLabel=
+    routeTestDecisionLabel(
+      overall
+    );
+
+  const decisionClass=
+    routeTestDecisionClass(
+      overall
+    );
+
+
+  const reasonItems=[];
+
+  destinations.forEach(
+    destination=>{
+      (destination.reason||[])
+        .forEach(
+          reason=>{
+            reasonItems.push(
+              `<li>${esc(reason)}</li>`
+            );
+          }
+        );
+    }
+  );
+
+
+  const uniqueReasons=[
+    ...new Set(
+      reasonItems
+    )
+  ];
+
+
+  const destinationRows=
+    destinations.map(
+      destination=>{
+
+        const decision=
+          destination.decision;
+
+        const markedRoute=
+          destination.marked_route||{};
+
+        const unmarkedRoute=
+          destination.unmarked_route||{};
+
+        const actualRoute=
+          decision==='direct'
+            ? markedRoute
+            : decision==='vpn'
+              ? unmarkedRoute
+              : null;
+
+        const alternateRoute=
+          decision==='direct'
+            ? unmarkedRoute
+            : decision==='vpn'
+              ? markedRoute
+              : null;
+
+        return `
+          <tr>
+
+            <td>
+              <b>
+                ${esc(
+                  destination.ip
+                )}
+              </b>
+            </td>
+
+            <td>
+              ${
+                destination.direct_ipset?.ok
+                  ? '✓ MAXVPN_DIRECT'
+                  : '—'
+              }
+            </td>
+
+            <td>
+              ${
+                destination.static_ipset?.ok
+                  ? '✓ STATIC'
+                  : '—'
+              }
+            </td>
+
+            <td>
+              ${
+                actualRoute
+                  ? esc(actualRoute.raw||'—')
+                  : 'Не подтверждён'
+              }
+            </td>
+
+            <td>
+              ${
+                alternateRoute
+                  ? esc(alternateRoute.raw||'—')
+                  : 'Не определён'
+              }
+            </td>
+
+            <td class="
+              ${decision==='direct'
+                ? 'ok'
+                : decision==='vpn'
+                  ? 'warn'
+                  : ''
+              }
+            ">
+              ${esc(
+                routeTestDecisionLabel(
+                  decision
+                )
+              )}
+            </td>
+
+          </tr>
+        `;
+      }
+    ).join('');
+
+
+  const applyText=
+    configuration.config_dirty
+      ? '⚠ Есть неприменённые изменения'
+      : configuration.applied
+        ? '✓ Конфигурация синхронизирована с runtime'
+        : '⚠ Runtime не подтверждён как синхронизированный';
+
+
+  panel.style.display='block';
+
+  panel.style.background=
+    overall==='direct'
+      ? '#eef8f0'
+      : overall==='vpn'
+        ? '#fff8e8'
+        : '#eef6ff';
+
+  panel.style.color='#18304b';
+
+
+  panel.innerHTML=`
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+    ">
+
+      <div style="
+        min-width:0;
+        flex:1;
+      ">
+
+        <b style="
+          display:block;
+          font-size:15px;
+          margin-bottom:4px;
+        ">
+          Проверка маршрута
+        </b>
+
+        <div class="muted">
+          ${esc(
+            rule.target||'—'
+          )}
+          · priority
+          ${esc(
+            String(
+              rule.priority??'—'
+            )
+          )}
+        </div>
+
+      </div>
+
+      <button
+        class="btn ghost"
+        type="button"
+        onclick="
+          this.closest('tr.rule-test-row')
+            ?.remove()
+        "
+      >
+        Закрыть
+      </button>
+
+    </div>
+
+
+    <div style="
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:8px;
+      background:#fff;
+      border:1px solid #dbe5f0;
+    ">
+
+      <div>
+        <span class="muted">
+          Решение:
+        </span>
+
+        <b class="${decisionClass}">
+          ${esc(
+            decisionLabel
+          )}
+        </b>
+      </div>
+
+      <div
+        class="muted"
+        style="margin-top:5px;"
+      >
+        ${esc(applyText)}
+      </div>
+
+    </div>
+
+
+    <div style="
+      margin-top:12px;
+    ">
+
+      <b>Почему выбран этот маршрут</b>
+
+      ${
+        uniqueReasons.length
+          ? `
+            <ul style="
+              margin:6px 0 0 18px;
+              padding:0;
+            ">
+              ${uniqueReasons.join('')}
+            </ul>
+          `
+          : `
+            <div class="muted">
+              Нет детального объяснения.
+            </div>
+          `
+      }
+
+    </div>
+
+
+    ${
+      resolution.error
+        ? `
+          <div
+            style="
+              margin-top:10px;
+              color:#b13c47;
+            "
+          >
+            DNS:
+            ${esc(
+              resolution.error
+            )}
+          </div>
+        `
+        : ''
+    }
+
+
+    ${
+      destinations.length
+        ? `
+          <div
+            style="
+              margin-top:12px;
+              overflow-x:auto;
+            "
+          >
+
+            <table
+              class="table"
+            >
+
+              <thead>
+                <tr>
+                  <th>IP</th>
+                  <th>DIRECT IPSET</th>
+                  <th>STATIC</th>
+                  <th>Фактический маршрут</th>
+                  <th>Альтернативный маршрут без DIRECT</th>
+                  <th>Решение</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${destinationRows}
+              </tbody>
+
+            </table>
+
+          </div>
+        `
+        : `
+          <div
+            class="muted"
+            style="margin-top:10px;"
+          >
+            Для проверки не найдено
+            адресов.
+          </div>
+        `
+    }
+
+
+    <details
+      style="
+        margin-top:12px;
+      "
+    >
+
+      <summary>
+        Runtime details
+      </summary>
+
+      <div
+        class="muted"
+        style="
+          margin-top:8px;
+          white-space:pre-wrap;
+          font-family:monospace;
+          font-size:12px;
+        "
+      >
+${esc(
+  JSON.stringify(
+    {
+      resolved:
+        resolution.addresses||[],
+      wan:
+        runtime.wan_interface,
+      gateway:
+        runtime.wan_gateway,
+      vpn:
+        runtime.vpn_interface,
+      mangle_direct:
+        runtime.mangle_direct,
+      mangle_static:
+        runtime.mangle_static
+    },
+    null,
+    2
+  )
+)}
+      </div>
+
+    </details>
+
+  `;
+}
+
+
+async function testRule(id,sourceEl=null){
+
+  if(sourceEl){
+  window.__maxvpnRouteTestSourceRow = sourceEl.closest('tr');
+}
+
+const panel = ensureRuleTestPanel(id,sourceEl);
+
+  if(panel){
+
+    panel.style.display=
+      'block';
+
+    panel.style.background=
+      '#eef6ff';
+
+    panel.style.color=
+      '#24589d';
+
+    panel.textContent=
+      'Проверяем фактический маршрут…';
+  }
+
+  try{
+
+    const data=
+      await api(
+        '/api/appliance/v1/routing/rules/' +
+        id +
+        '/test',
+        {
+          method:'POST',
+          body:'{}'
+        }
+      );
+
+    renderRuleTestResult(
+      data
+    );
+
+  }catch(e){
+
+    if(panel){
+
+      panel.style.display=
+        'block';
+
+      panel.style.background=
+        '#feecec';
+
+      panel.style.color=
+        '#b13c47';
+
+      panel.textContent=
+        'Ошибка проверки маршрута: '+
+        e.message;
+
+    }else{
+
+      alert(
+        'Ошибка проверки маршрута: '+
+        e.message
+      );
+    }
+  }
+}
+
+async function applyRouting(){const b=$('applyBtn');b.disabled=true;setNotice('Применяем Smart Routing…');try{const data=await api('/api/appliance/v1/routing/apply',{method:'POST'});state.dirty=false;setNotice(`Применено. DIRECT=${data.runtime?.mangle_direct_count||0}, STATIC=${data.runtime?.mangle_static_count||0}`);await refreshAll()}catch(e){setNotice('Ошибка применения: '+e.message,true)}finally{b.disabled=false;render()}}
+async function loadPreset(){try{const data=await api('/api/appliance/v1/routing/presets/russia-direct',{method:'POST'});state.routing={...(state.routing||{}),rules:data.rules||[]};state.dirty=true;setNotice('Российский DIRECT-набор импортирован. Нажмите «Применить».');render()}catch(e){alert(e.message)}}
+
+function setDiagNotice(text,error=false){
+  const n=$('diagNotice');
+  n.style.display='block';
+  n.textContent=text;
+  n.style.background=error?'#feecec':'#eef6ff';
+  n.style.color=error?'#b13c47':'#24589d';
+}
+
+async function startDiagnostic(){
+  const domainInput=$('diagSite')||$('diagDomain');
+  const domain=(domainInput?.value||'').trim();
+  const clientIp=$('diagClient').value.trim();
+  const duration=Number($('diagDuration').value||30);
+
+  if(!domain){
+    setDiagNotice('Укажите домен сайта.',true);
+    return;
+  }
+
+  if(state.diagnosticTimer){
+    clearInterval(state.diagnosticTimer);
+    state.diagnosticTimer=null;
+  }
+
+  try{
+    const data=await api('/api/appliance/v1/routing/diagnostics/start',{
+      method:'POST',
+      body:JSON.stringify({
+        domain,
+        client_ip:clientIp,
+        duration_seconds:duration
+      })
+    });
+
+    state.diagnostic=data;
+    setDiagNotice(
+      `Диагностика запущена на ${data.duration_seconds} сек. `+
+      'Теперь откройте проблемный сайт и обновите страницу.'
+    );
+
+    await pollDiagnostic();
+
+    state.diagnosticTimer=setInterval(async()=>{
+      await pollDiagnostic();
+      if(!state.diagnostic?.running){
+        clearInterval(state.diagnosticTimer);
+        state.diagnosticTimer=null;
+      }
+    },1500);
+  }catch(e){
+    setDiagNotice('Ошибка запуска: '+e.message,true);
+  }
+}
+
+async function pollDiagnostic(){
+  if(!state.diagnostic?.token)return;
+
+  try{
+    const data=await api(
+      '/api/appliance/v1/routing/diagnostics/'+state.diagnostic.token
+    );
+    state.diagnostic=data;
+    renderDiagnostic(data);
+  }catch(e){
+    setDiagNotice('Ошибка диагностики: '+e.message,true);
+  }
+}
+
+function renderDiagnostic(data){
+  const box=$('diagResults');
+  if(!box)return;
+
+  const s=data.summary||{};
+  const resources=data.resources||[];
+
+  setDiagNotice(
+    data.running
+      ? `Сбор запросов продолжается. Осталось примерно ${data.remaining_seconds} сек.`
+      : `Диагностика завершена. Клиент: ${data.client_ip||'авто'}. `+
+        `Найдено ресурсов: ${s.observed||0}, через VPN: ${s.missing_direct||0}.`
+  );
+
+  if(!resources.length){
+    box.innerHTML='<div class="muted">Пока запросов не обнаружено. Откройте сайт и подождите несколько секунд.</div>';
+    return;
+  }
+
+  box.innerHTML=`
+    <div class="table-tools">
+      <div class="label">
+        Ресурсы: ${s.observed||0}
+        · сайт: ${s.target_site||0}
+        · внешние кандидаты: ${s.external_candidates||0}
+        · фоновые: ${s.background||0}
+        · IPv4: ${s.with_ip||0}/${s.observed||0}
+        · DIRECT: ${s.direct||0}
+        · VPN: ${s.vpn||0}
+        · смешанный: ${s.mixed||0}
+      </div>
+      <button class="btn primary" onclick="addDiagnosticRules()" ${!data.running && resources.some(x=>x.candidate_eligible===true)?'':'disabled'}>
+        Добавить выбранные DIRECT
+      </button>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Ресурс</th>
+          <th>IP</th>
+          <th>Запросы</th>
+          <th>Маршрут</th>
+          <th>Правило</th>
+          <th>Классификация</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${resources.map((x,i)=>{
+          const route=x.route==='wan'?'DIRECT / WAN':
+                      x.route==='vpn'?'VPN':
+                      x.route==='mixed'?'Смешанный':'Не определён';
+          const cls=x.route==='wan'?'ok':
+                     x.route==='vpn'?'warn':'';
+          const checked=!data.running && x.candidate_eligible===true;
+          return `<tr>
+            <td>${checked?`<input type="checkbox" class="diag-check" data-index="${i}">`:''}</td>
+            <td><b>${esc(x.hostname)}</b></td>
+            <td>${esc((x.ips||[]).join(', ')||'—')}</td>
+            <td>${x.queries||0}</td>
+            <td class="${cls}">${route}</td>
+            <td>${x.covered_by_rule?'Есть':'Нет'}</td>
+            <td>${x.role}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function addDiagnosticRules(){
+  const data=state.diagnostic;
+  if(!data)return;
+
+  const resources=data.resources||[];
+  const selected=[...document.querySelectorAll('.diag-check:checked')]
+    .map(x=>Number(x.dataset.index))
+    .map(i=>resources[i])
+    .filter(Boolean);
+
+  if(!selected.length){
+    setDiagNotice('Выберите хотя бы один ресурс.',true);
+    return;
+  }
+
+  let added=0;
+
+  for(const item of selected){
+    try{
+        await api('/api/appliance/v1/routing/diagnostics/'+encodeURIComponent(data.token)+'/direct',{
+          method:'POST',
+          body:JSON.stringify({target:item.hostname})
+        });
+      added++;
+    }catch(e){
+      if(!String(e.message||'').includes('already exists')){
+        console.error(e);
+      }
+    }
+  }
+
+  await refreshAll();
+  setDiagNotice(`Добавлено в Smart Routing: ${added}. Нажмите «Применить».`);
+}
+
+
+async function handleSmartImportChange(input){
+  const file=input?.files?.[0]||null;
+
+  state.smartImportFile=file;
+  state.smartImportPreview=null;
+  state.smartImportContent='';
+
+  const box=$('smartImportPreview');
+
+  if(!file){
+    if(box){
+      box.style.display='none';
+      box.innerHTML='';
+    }
+    return;
+  }
+
+  const extension=file.name.toLowerCase().split('.').pop();
+
+  if(extension!=='txt' && extension!=='csv'){
+    setNotice('Ошибка импорта: выберите TXT или CSV.',true);
+    input.value='';
+    state.smartImportFile=null;
+    return;
+  }
+
+  try{
+    setNotice('Проверяем файл импорта…');
+
+    const content=await file.text();
+
+    const preview=await api(
+      '/api/appliance/v1/routing/import/preview',
+      {
+        method:'POST',
+        body:JSON.stringify({
+          filename:file.name,
+          content
+        })
+      }
+    );
+
+    state.smartImportContent=content;
+    state.smartImportPreview=preview;
+
+    renderSmartImportPreview();
+
+    setNotice('Предпросмотр импорта готов.');
+  }catch(e){
+    setNotice(
+      'Ошибка импорта: '+e.message,
+      true
+    );
+  }finally{
+    input.value='';
+  }
+}
+
+function renderSmartImportPreview(){
+  const box=$('smartImportPreview');
+
+  if(!box){
+    return;
+  }
+
+  const data=state.smartImportPreview;
+
+  if(!data){
+    box.style.display='none';
+    box.innerHTML='';
+    return;
+  }
+
+  const invalid=(data.items||[])
+    .filter(x=>x.status==='invalid')
+    .slice(0,12);
+
+  const previewItems=(data.items||[])
+    .filter(x=>x.status!=='invalid')
+    .slice(0,30);
+
+  const invalidHtml=invalid.length
+    ? `<div style="margin-top:10px">
+        <strong>Проблемные строки</strong>
+        ${invalid.map(x=>
+          `<div class="muted">
+            строка ${x.line}: ${esc(x.resource)}
+            ${x.comment
+              ? ` · ${esc(x.comment)}`
+              : ''}
+            — ${esc(x.error||'некорректный ресурс')}
+          </div>`
+        ).join('')}
+      </div>`
+    : '';
+
+  const previewStatus={
+    valid:'Новая',
+    duplicate:'Дубликат',
+    already_exists:'Уже есть'
+  };
+
+  const previewTable=previewItems.length
+    ? `
+      <div class="sr-table-wrap" style="margin-top:12px;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Строка</th>
+              <th>Ресурс</th>
+              <th>Комментарий</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${previewItems.map(x=>`
+              <tr>
+                <td>${x.line}</td>
+                <td>${esc(x.resource)}</td>
+                <td>${esc(x.comment||'')}</td>
+                <td>${previewStatus[x.status]||esc(x.status||'')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`
+    : '';
+
+  box.style.display='block';
+
+  box.innerHTML=`
+    <div class="note">
+      <div>
+        <strong>Предпросмотр импорта</strong>
+        <span class="muted">
+          · ${esc(data.filename||'файл')}
+        </span>
+      </div>
+
+      <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">
+        <span>Новых: <strong>${data.new}</strong></span>
+        <span>Уже есть: <strong>${data.already_exists}</strong></span>
+        <span>Дубликаты: <strong>${data.duplicates}</strong></span>
+        <span>Ошибки: <strong>${data.invalid}</strong></span>
+      </div>
+
+      ${previewTable}
+
+      ${invalidHtml}
+
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button
+          class="btn primary"
+          onclick="confirmSmartImport()"
+          ${data.new===0?'disabled':''}
+        >
+          Импортировать ${data.new>0 ? data.new+' новых' : ''}
+        </button>
+
+        <button
+          class="btn ghost"
+          onclick="cancelSmartImport()"
+        >
+          Отмена
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+
+function cancelSmartImport(){
+  state.smartImportFile=null;
+  state.smartImportPreview=null;
+  state.smartImportContent='';
+
+  const box=$('smartImportPreview');
+
+  if(box){
+    box.style.display='none';
+    box.innerHTML='';
+  }
+}
+
+async function confirmSmartImport(){
+  if(
+    !state.smartImportFile ||
+    !state.smartImportPreview ||
+    !state.smartImportContent
+  ){
+    return;
+  }
+
+  try{
+    const result=await api(
+      '/api/appliance/v1/routing/import',
+      {
+        method:'POST',
+        body:JSON.stringify({
+          filename:state.smartImportFile.name,
+          content:state.smartImportContent
+        })
+      }
+    );
+
+    cancelSmartImport();
+
+    await refreshAll();
+
+    setNotice(
+      `Импорт завершён. Добавлено: ${result.added}. `+
+      `Уже существовало: ${result.already_exists}.`
+    );
+  }catch(e){
+    setNotice(
+      'Ошибка импорта: '+e.message,
+      true
+    );
+  }
+}
+
+function setNotice(text,error=false){const n=$('applyResult');n.style.display='block';n.textContent=text;n.style.background=error?'#feecec':'#eef6ff';n.style.color=error?'#b13c47':'#24589d'}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));$(b.dataset.page).classList.add('active');$('title').textContent=b.textContent.replace(/^.\s+/,'').replace(/^[^\p{L}]+/u,'').trim()||'MaxVPN';});
+refreshAll();setInterval(()=>{if(document.visibilityState==='visible')refreshAll()},15000);
+
+
+
+/* DNS 1.0 — read-only status */
+async function refreshDnsStatus(){
+  const statusEl = $('dnsStatus');
+  statusEl.textContent = 'Обновление…';
+
+  try {
+    const data = await api('/api/appliance/v1/dns/status');
+
+    statusEl.textContent =
+      data.dnsmasq?.running === true
+        ? 'dnsmasq работает'
+        : 'dnsmasq не обнаружен';
+
+    const rebind = data.configuration?.rebind_protection;
+    $('dnsRebind').textContent =
+      rebind === true ? 'Включена' :
+      rebind === false ? 'Отключена' : 'Неизвестно';
+
+    $('dnsResolvFile').textContent =
+      data.configuration?.resolv_file || 'Не определён';
+
+    const tbody = $('dnsUpstreams');
+    tbody.replaceChildren();
+
+    const upstreams = Array.isArray(data.upstreams)
+      ? data.upstreams : [];
+
+    if (!upstreams.length) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 4;
+      td.textContent = 'DNS upstream не определены';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+
+    for (const server of upstreams) {
+      const tr = document.createElement('tr');
+      const route = server.route || {};
+
+      const mode =
+        route.mode === 'vpn' ? 'VPN' :
+        route.mode === 'wan' ? 'WAN' : 'Неизвестно';
+
+      const values = [
+        server.address || '—',
+        server.source || '—',
+        mode + (route.table ? ' · table ' + route.table : ''),
+        route.interface || '—'
+      ];
+
+      for (const value of values) {
+        const td = document.createElement('td');
+        td.textContent = String(value);
+        tr.appendChild(td);
+      }
+
+      tbody.appendChild(tr);
+    }
+
+    const descriptions = {
+      resolv_file_disabled:
+        'Использование resolv-файла отключено.',
+      resolv_file_unavailable:
+        'Не удалось прочитать файл DNS upstream.',
+      resolv_file_not_configured:
+        'Файл DNS upstream не настроен.',
+      explicit_dns_servers_require_separate_parsing:
+        'Есть дополнительные DNS-серверы, которые пока не включены в список.'
+    };
+
+    const warnings = Array.isArray(data.warnings)
+      ? data.warnings : [];
+
+    $('dnsWarnings').textContent = warnings.length
+      ? warnings.map(x => descriptions[x] || String(x)).join(' ')
+      : 'Предупреждений от DNS Status API нет.';
+
+    $('dnsUpdated').textContent =
+      'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
+
+  } catch (error) {
+    statusEl.textContent = 'Данные недоступны';
+    $('dnsRebind').textContent = '—';
+    $('dnsResolvFile').textContent = '—';
+    $('dnsUpstreams').replaceChildren();
+    $('dnsWarnings').textContent =
+      'Ошибка DNS API: ' + error.message;
+    $('dnsUpdated').textContent = 'Ошибка обновления';
+  }
+}
+
+document.querySelectorAll('[data-page="dns"]').forEach(
+  element => element.addEventListener(
+    'click', () => { void refreshDnsStatus(); }
+  )
+);
+
+void refreshDnsStatus();
+
+window.setInterval(() => {
+  if (
+    document.visibilityState === 'visible' &&
+    $('dns')?.classList.contains('active')
+  ) {
+    void refreshDnsStatus();
+  }
+}, 15000);
+
+</script>
+</body>
+</html>

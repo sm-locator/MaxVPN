@@ -12,7 +12,9 @@ from app.api.dependencies import (
     get_wireguard_manager,
     get_wireguard_server_settings,
 )
+from app.auth.dependencies import require_role
 from app.exporters.export_facade import ExportFacade
+from app.models.roles import UserRole
 from app.schemas.wireguard_client import (
     ClientCreate,
     ClientListItem,
@@ -26,6 +28,8 @@ from app.vpn.wireguard.server_settings import WireGuardServerSettings
 router = APIRouter(
     prefix="/clients",
     tags=["Clients"],
+    # Legacy peers are global and have no owner to scope access to.
+    dependencies=[Depends(require_role(UserRole.ADMIN))],
 )
 
 

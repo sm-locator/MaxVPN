@@ -1,5 +1,7 @@
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.models.roles import UserRole
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.user import UserCreate
@@ -8,7 +10,51 @@ from app.services.password import PasswordService
 
 class UserService:
     def __init__(self, db: Session):
+        self.db = db
         self.users = UserRepository(db)
+
+    def admin_bootstrap_available(self) -> bool:
+        return not self.has_admin()
+
+    def has_admin(self) -> bool:
+        return any(user.role == UserRole.ADMIN for user in self.users.get_all())
+
+    def create_admin(self, email: str, password: str) -> User:
+        # Serialize first-run bootstrap across concurrent API workers. The lock
+        # lives until create() commits, or the request rolls back on refusal.
+        if self.db.get_bind().dialect.name == "postgresql":
+            self.db.execute(text("SELECT pg_advisory_xact_lock(638174921)"))
+        if self.has_admin():
+            raise ValueError("Admin already exists")
+
+        existing_user = self.users.get_by_email(email)
+
+        if existing_user:
+            raise ValueError("User already exists")
+
+        user = User(
+            email=email,
+            password_hash=PasswordService.hash_password(password),
+            role=UserRole.ADMIN,
+        )
+
+        return self.users.create(user)
+
+    def update_credentials(
+        self,
+        user: User,
+        email: str,
+        password: str,
+    ) -> User:
+        existing_user = self.users.get_by_email(email)
+
+        if existing_user is not None and existing_user.id != user.id:
+            raise ValueError("User already exists")
+
+        user.email = email
+        user.password_hash = PasswordService.hash_password(password)
+
+        return self.users.update(user)
 
     def create_user(self, user_data: UserCreate) -> User:
         existing_user = self.users.get_by_email(user_data.email)

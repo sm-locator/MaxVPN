@@ -1,0 +1,7 @@
+#!/bin/sh
+# Restore Smart Routing after the logical WAN interface comes up. The CLI
+# neither starts the Appliance HTTP server nor the VLESS selection monitor.
+
+[ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "wan" ] || exit 0
+
+exec /usr/bin/python3 /opt/maxvpn-appliance/server.py --restore-routing

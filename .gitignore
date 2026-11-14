@@ -1,29 +1,47 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyc
 *.pyo
 *.pyd
+
+# Virtual environment
 .venv/
-.env
+venv/
 
-# VS Code
+# Pytest
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# IDE
 .vscode/
+.idea/
 
-# Docker
-postgres_data/
+# OS
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
 
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
-
-# Node
-node_modules/
+# Environment
+.env
+.env.*
 
 # Build
 dist/
+build/
+*.egg-info/
+
+# SQLite
+*.db
+
+client.conf
+
+exports/
+
+# Browser test output
+frontend/test-results/
+frontend/playwright-report/

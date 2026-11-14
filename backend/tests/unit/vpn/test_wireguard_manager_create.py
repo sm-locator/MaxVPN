@@ -12,7 +12,6 @@ from tests.unit.vpn.helpers import (
 
 
 def test_create_client() -> None:
-
     deps = create_dependencies()
 
     keys = create_key_pair()
@@ -78,7 +77,6 @@ def test_create_client() -> None:
 
 
 def test_create_client_rolls_back_repository_when_add_peer_fails() -> None:
-
     deps = create_dependencies()
 
     keys = create_key_pair()

@@ -30,3 +30,16 @@ class User(BaseModel):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    smart_routing_rules = relationship(
+        "SmartRoutingRule",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    vpn_profile = relationship(
+        "VpnProfile",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )

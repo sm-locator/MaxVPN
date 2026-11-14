@@ -1,9 +1,11 @@
+from hmac import compare_digest
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
 
-from app.core.security import decode_access_token
+from app.core.security import credential_version, decode_access_token
 from app.database.dependencies import get_db
 from app.models.roles import UserRole
 from app.models.user import User
@@ -35,6 +37,15 @@ def get_current_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
+            )
+
+        version = payload.get("credential_version")
+        if not isinstance(version, str) or not compare_digest(
+            version, credential_version(user.password_hash)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
             )
 
         return user
