@@ -21,6 +21,11 @@ from ipaddress import ip_network
 from pathlib import Path
 from urllib.parse import urlparse
 
+if __package__:
+    from .dns_status import collect_dns_status
+else:
+    from dns_status import collect_dns_status
+
 from vless_control import VlessControl, VlessControlError
 
 VLESS_CONTROL = VlessControl()
@@ -2627,6 +2632,8 @@ class Handler(BaseHTTPRequestHandler):
                         "version": "5.0",
                     },
                 )
+            if path == "/api/appliance/v1/dns/status":
+                return self.send_json(200, collect_dns_status())
             if path == "/api/appliance/v1/status":
                 return self.send_json(200, status_runtime())
             if path == "/api/appliance/v1/vpn":

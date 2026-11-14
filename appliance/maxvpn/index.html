@@ -1209,7 +1209,74 @@
 </section>
 
 <section id="devices" class="section"><div class="card"><div class="label">Устройства</div><h2>Клиенты локальной сети</h2><p class="muted">Этот раздел подключим к данным DHCP/ARP следующей итерацией. Интерфейс и API-контракт уже зарезервированы.</p></div></section>
-<section id="dns" class="section"><div class="grid2"><div class="card"><div class="label">Локальное имя MaxVPN</div><div class="big">maxvpn.lan</div><div class="muted">→ 192.168.8.1</div></div><div class="card"><div class="label">DNS upstream</div><div class="actions" style="margin-top:12px"><span class="pill" style="background:#edf2fa;color:#51627e">1.1.1.1</span><span class="pill" style="background:#edf2fa;color:#51627e">8.8.8.8</span><span class="pill" style="background:#edf2fa;color:#51627e">9.9.9.9</span></div><p class="muted">Разрешение выполняется dnsmasq на Brume 3.</p></div></div></section>
+<section id="dns" class="section">
+  <div class="grid2">
+    <div class="card">
+      <div class="label">DNS SERVICE</div>
+      <div class="big" id="dnsStatus">Загрузка…</div>
+      <p class="muted">Локальный DNS · dnsmasq</p>
+      <div class="rows">
+        <div class="row">
+          <span>DNS rebind protection</span>
+          <b id="dnsRebind">—</b>
+        </div>
+        <div class="row">
+          <span>Файл upstream</span>
+          <b id="dnsResolvFile">—</b>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Локальное имя MaxVPN</div>
+      <div class="big">maxvpn.lan</div>
+      <p class="muted">192.168.8.1</p>
+      <p class="muted">
+        Значения указаны в конфигурации интерфейса.
+        Проверка локальной DNS-записи появится отдельно.
+      </p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="route-head">
+      <div>
+        <div class="label">DNS UPSTREAM</div>
+        <h2>Серверы DNS</h2>
+        <p class="muted">
+          Настроенные серверы и расчётные маршруты.
+          Фактический активный сервер пока не определяется.
+        </p>
+      </div>
+      <button class="btn ghost"
+              onclick="refreshDnsStatus()">
+        Обновить
+      </button>
+    </div>
+    <div class="sr-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>DNS-сервер</th>
+            <th>Источник</th>
+            <th>Маршрут</th>
+            <th>Интерфейс</th>
+          </tr>
+        </thead>
+        <tbody id="dnsUpstreams">
+          <tr><td colspan="4">Загрузка…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" id="dnsUpdated">—</p>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="label">ДИАГНОСТИКА DNS</div>
+    <p class="muted" id="dnsWarnings">
+      Ожидание данных…
+    </p>
+  </div>
+</section>
 <section id="system" class="section"><div class="grid2"><div class="card"><div class="label">Brume 3</div><div class="rows" id="sysBoard"></div></div><div class="card"><div class="label">Appliance</div><div class="rows" id="sysApp"></div></div></div></section>
 </main></div>
 <script>
@@ -4811,6 +4878,116 @@ function setNotice(text,error=false){const n=$('applyResult');n.style.display='b
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));$(b.dataset.page).classList.add('active');$('title').textContent=b.textContent.replace(/^.\s+/,'').replace(/^[^\p{L}]+/u,'').trim()||'MaxVPN';});
 refreshAll();setInterval(()=>{if(document.visibilityState==='visible')refreshAll()},15000);
 
+
+
+/* DNS 1.0 — read-only status */
+async function refreshDnsStatus(){
+  const statusEl = $('dnsStatus');
+  statusEl.textContent = 'Обновление…';
+
+  try {
+    const data = await api('/api/appliance/v1/dns/status');
+
+    statusEl.textContent =
+      data.dnsmasq?.running === true
+        ? 'dnsmasq работает'
+        : 'dnsmasq не обнаружен';
+
+    const rebind = data.configuration?.rebind_protection;
+    $('dnsRebind').textContent =
+      rebind === true ? 'Включена' :
+      rebind === false ? 'Отключена' : 'Неизвестно';
+
+    $('dnsResolvFile').textContent =
+      data.configuration?.resolv_file || 'Не определён';
+
+    const tbody = $('dnsUpstreams');
+    tbody.replaceChildren();
+
+    const upstreams = Array.isArray(data.upstreams)
+      ? data.upstreams : [];
+
+    if (!upstreams.length) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 4;
+      td.textContent = 'DNS upstream не определены';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+
+    for (const server of upstreams) {
+      const tr = document.createElement('tr');
+      const route = server.route || {};
+
+      const mode =
+        route.mode === 'vpn' ? 'VPN' :
+        route.mode === 'wan' ? 'WAN' : 'Неизвестно';
+
+      const values = [
+        server.address || '—',
+        server.source || '—',
+        mode + (route.table ? ' · table ' + route.table : ''),
+        route.interface || '—'
+      ];
+
+      for (const value of values) {
+        const td = document.createElement('td');
+        td.textContent = String(value);
+        tr.appendChild(td);
+      }
+
+      tbody.appendChild(tr);
+    }
+
+    const descriptions = {
+      resolv_file_disabled:
+        'Использование resolv-файла отключено.',
+      resolv_file_unavailable:
+        'Не удалось прочитать файл DNS upstream.',
+      resolv_file_not_configured:
+        'Файл DNS upstream не настроен.',
+      explicit_dns_servers_require_separate_parsing:
+        'Есть дополнительные DNS-серверы, которые пока не включены в список.'
+    };
+
+    const warnings = Array.isArray(data.warnings)
+      ? data.warnings : [];
+
+    $('dnsWarnings').textContent = warnings.length
+      ? warnings.map(x => descriptions[x] || String(x)).join(' ')
+      : 'Предупреждений от DNS Status API нет.';
+
+    $('dnsUpdated').textContent =
+      'Обновлено: ' + new Date().toLocaleTimeString('ru-RU');
+
+  } catch (error) {
+    statusEl.textContent = 'Данные недоступны';
+    $('dnsRebind').textContent = '—';
+    $('dnsResolvFile').textContent = '—';
+    $('dnsUpstreams').replaceChildren();
+    $('dnsWarnings').textContent =
+      'Ошибка DNS API: ' + error.message;
+    $('dnsUpdated').textContent = 'Ошибка обновления';
+  }
+}
+
+document.querySelectorAll('[data-page="dns"]').forEach(
+  element => element.addEventListener(
+    'click', () => { void refreshDnsStatus(); }
+  )
+);
+
+void refreshDnsStatus();
+
+window.setInterval(() => {
+  if (
+    document.visibilityState === 'visible' &&
+    $('dns')?.classList.contains('active')
+  ) {
+    void refreshDnsStatus();
+  }
+}, 15000);
 
 </script>
 </body>
