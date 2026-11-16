@@ -3896,7 +3896,7 @@ async function previewVlessSubscription(){
     vlessSubscriptionPreview={url,client,digest:preview.digest};
     const items=(preview.servers||[]).map(p=>'<li>'+vlessEscape(p.name)+' — '+vlessEscape(p.address)+':'+vlessEscape(p.port)+'</li>').join('');
     const errors=(preview.errors||[]).slice(0,10).map(p=>'<li>'+vlessEscape(p.reason||'Неподдерживаемый профиль')+'</li>').join('');
-    results.innerHTML='<p>Совместимых: '+Number(preview.compatible||0)+'; пропущено: '+Number(preview.unsupported||0)+'.</p>'+(items?'<ul>'+items+'</ul>':'')+(errors?'<details><summary>Причины пропуска</summary><ul>'+errors+'</ul></details>':'');
+    results.innerHTML='<p>Совместимых ссылок: '+Number(preview.compatible||0)+'; уникальных подключений: '+Number(preview.unique_connections||0)+'; повторных названий/алиасов: '+Number(preview.duplicate_aliases||0)+'; неподдерживаемых: '+Number(preview.unsupported||0)+'.</p>'+(items?'<ul>'+items+'</ul>':'')+(errors?'<details><summary>Причины пропуска</summary><ul>'+errors+'</ul></details>':'');
     $('vlessSubscriptionImportButton').disabled=!preview.compatible;
   }catch(e){results.textContent='Подписку не удалось проверить: '+(e.message||'ошибка');}
   finally{button.disabled=false;}
