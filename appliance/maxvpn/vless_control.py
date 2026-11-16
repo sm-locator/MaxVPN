@@ -1236,6 +1236,7 @@ class VlessControl:
 
         compatible = []
         preview = []
+        seen_connections = set()
         errors = [{"status": "unsupported", "reason": reason} for reason in skipped]
         for source in candidates:
             try:
@@ -1243,9 +1244,12 @@ class VlessControl:
                     parsed = _parse_vless_uri(source)
                 else:
                     parsed = _parse_happ_json(source)
+                identity = _identity(parsed)
+                is_alias = identity in seen_connections
+                seen_connections.add(identity)
                 compatible.append(source)
                 preview.append({
-                    "status": "supported",
+                    "status": "alias" if is_alias else "supported",
                     "name": parsed["name"],
                     "address": parsed["address"],
                     "port": parsed["port"],
@@ -1266,6 +1270,8 @@ class VlessControl:
         return {
             "digest": digest,
             "compatible": len(compatible),
+            "unique_connections": sum(1 for i in preview if i.get("status") == "supported"),
+            "duplicate_aliases": sum(1 for i in preview if i.get("status") == "alias"),
             "unsupported": len(errors),
             "servers": preview,
             "errors": errors[:30],
