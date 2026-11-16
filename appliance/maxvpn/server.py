@@ -2693,6 +2693,12 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/appliance/v1/vless/import":
                 data = self.read_json()
                 return self.send_json(200, VLESS_CONTROL.import_profiles(data))
+            if path == "/api/appliance/v1/vless/subscription/preview":
+                data = self.read_json()
+                return self.send_json(200, VLESS_CONTROL.preview_subscription(data))
+            if path == "/api/appliance/v1/vless/subscription/import":
+                data = self.read_json()
+                return self.send_json(200, VLESS_CONTROL.import_subscription(data))
             if path == "/api/appliance/v1/vless/settings":
                 data = self.read_json()
                 return self.send_json(200, VLESS_CONTROL.update_settings(data))
