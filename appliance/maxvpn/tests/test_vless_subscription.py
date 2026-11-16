@@ -196,9 +196,36 @@ def test_subscription_same_connection_different_titles_deduplicates(
     )
     preview = manager.preview_subscription({"url": "https://example.com/sub"})
     assert preview["compatible"] == 2
+    assert preview["unique_connections"] == 1
+    assert preview["duplicate_aliases"] == 1
     result = manager.import_subscription({
         "url": "https://example.com/sub", "digest": digest,
     })
     assert result["imported"] == 1
     assert result["updated"] == 1
     assert len(manager._load_store()["profiles"]) == 1
+
+
+def test_subscription_distinct_fingerprints_are_not_merged(tmp_path, monkeypatch):
+    other = LINK.replace("fp=chrome", "fp=firefox").replace("#Sweden", "#Sweden%202")
+    raw = LINK + "\n" + other + "\n"
+    digest = hashlib.sha256(raw.encode()).hexdigest()
+    monkeypatch.setattr(
+        vless_control, "fetch_subscription",
+        lambda url, client="standard": (raw, digest),
+    )
+    monkeypatch.setattr(vless_control, "BACKUP_DIR", tmp_path / "backups")
+    manager = VlessControl(
+        profile_file=tmp_path / "profiles.json",
+        config_file=tmp_path / "sing-box.json",
+    )
+    preview = manager.preview_subscription({"url": "https://example.com/sub"})
+    assert preview["compatible"] == 2
+    assert preview["unique_connections"] == 2
+    assert preview["duplicate_aliases"] == 0
+    result = manager.import_subscription({
+        "url": "https://example.com/sub", "digest": digest,
+    })
+    assert result["imported"] == 2
+    assert result["updated"] == 0
+    assert len(manager._load_store()["profiles"]) == 2
