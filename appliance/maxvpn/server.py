@@ -2832,7 +2832,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_error_json(409, "rule already exists")
         except VlessControlError as e:
             code = (
-                422 if path.endswith("/import") or path.endswith("/settings") else 502
+                422 if path.endswith(("/import", "/settings", "/preview")) else 502
             )
             return self.send_error_json(code, str(e))
         except ValueError as e:
