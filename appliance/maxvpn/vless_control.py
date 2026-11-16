@@ -22,6 +22,8 @@ from functools import wraps
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
+from vless_subscription import SubscriptionError, fetch_subscription, parse_subscription
+
 ROOT = Path("/opt/maxvpn-appliance")
 DATA = ROOT / "data"
 BACKUP_DIR = DATA / "vless-backups"
@@ -1215,6 +1217,77 @@ class VlessControl:
         with LOCK:
             store = self._load_store()
             return self._runtime_info(store)
+
+    def _inspect_subscription(self, data):
+        if not isinstance(data, dict):
+            raise VlessControlError("Параметры подписки должны быть JSON-объектом.")
+        try:
+            content, digest = fetch_subscription(
+                data.get("url"), client=data.get("client", "standard")
+            )
+            candidates, skipped = parse_subscription(content)
+        except SubscriptionError as exc:
+            raise VlessControlError(str(exc)) from exc
+
+        compatible = []
+        preview = []
+        errors = [{"status": "unsupported", "reason": reason} for reason in skipped]
+        for source in candidates:
+            try:
+                if source.startswith("vless://"):
+                    parsed = _parse_vless_uri(source)
+                else:
+                    parsed = _parse_happ_json(source)
+                compatible.append(source)
+                preview.append({
+                    "status": "supported",
+                    "name": parsed["name"],
+                    "address": parsed["address"],
+                    "port": parsed["port"],
+                    "security": parsed["security"],
+                    "network": parsed["network"],
+                })
+            except (ValueError, TypeError, KeyError) as exc:
+                errors.append({"status": "unsupported", "reason": str(exc)[:180]})
+        if len(compatible) > MAX_PROFILES:
+            raise VlessControlError(
+                "В подписке больше 50 совместимых серверов. Максимум MaxVPN — 50."
+            )
+        return digest, compatible, preview, errors
+
+    def preview_subscription(self, data):
+        """Download and validate without changing profiles, routing or runtime."""
+        digest, compatible, preview, errors = self._inspect_subscription(data)
+        return {
+            "digest": digest,
+            "compatible": len(compatible),
+            "unsupported": len(errors),
+            "servers": preview,
+            "errors": errors[:30],
+            "note": "Предпросмотр не меняет конфигурацию или маршрутизацию.",
+        }
+
+    def import_subscription(self, data):
+        """Refetch, verify the preview digest, then reuse the existing safe importer."""
+        digest, compatible, preview, errors = self._inspect_subscription(data)
+        expected = data.get("digest") if isinstance(data, dict) else None
+        if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+            raise VlessControlError("Сначала выполните предпросмотр подписки.")
+        if digest != expected:
+            raise VlessControlError(
+                "Содержимое подписки изменилось. Повторите предпросмотр."
+            )
+        if not compatible:
+            raise VlessControlError(
+                "В подписке нет серверов, совместимых с текущим MaxVPN."
+            )
+        result = self.import_profiles({"sources": compatible})
+        result["subscription_unsupported"] = len(errors)
+        result["subscription_note"] = (
+            "Подписка загружена однократно; существующие серверы не удалены. "
+            "Применение конфигурации выполняется отдельно."
+        )
+        return result
 
     @_serialized
     def import_profiles(self, data):
