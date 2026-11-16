@@ -163,3 +163,42 @@ def test_unsupported_transport_skipped_without_write(tmp_path, monkeypatch):
     with pytest.raises(VlessControlError, match="нет серверов"):
         control.import_subscription({"url": "https://example.com/t", "digest": digest})
     assert not (tmp_path / "profiles.json").exists()
+
+
+def test_identity_distinguishes_reality_fingerprint():
+    original = vless_control._parse_vless_uri(LINK)
+    firefox = vless_control._parse_vless_uri(LINK.replace("fp=chrome", "fp=firefox"))
+    assert vless_control._identity(original) != vless_control._identity(firefox)
+
+
+def test_identity_distinguishes_reality_from_plain_vless():
+    original = vless_control._parse_vless_uri(LINK)
+    plain = vless_control._parse_vless_uri(
+        LINK.replace("security=reality", "security=none")
+    )
+    assert vless_control._identity(original) != vless_control._identity(plain)
+
+
+def test_subscription_same_connection_different_titles_deduplicates(
+    tmp_path, monkeypatch
+):
+    second = LINK.replace("#Sweden", "#Fast%20Sweden")
+    raw = LINK + "\n" + second + "\n"
+    digest = hashlib.sha256(raw.encode()).hexdigest()
+    monkeypatch.setattr(
+        vless_control, "fetch_subscription",
+        lambda url, client="standard": (raw, digest),
+    )
+    monkeypatch.setattr(vless_control, "BACKUP_DIR", tmp_path / "backups")
+    manager = VlessControl(
+        profile_file=tmp_path / "profiles.json",
+        config_file=tmp_path / "sing-box.json",
+    )
+    preview = manager.preview_subscription({"url": "https://example.com/sub"})
+    assert preview["compatible"] == 2
+    result = manager.import_subscription({
+        "url": "https://example.com/sub", "digest": digest,
+    })
+    assert result["imported"] == 1
+    assert result["updated"] == 1
+    assert len(manager._load_store()["profiles"]) == 1
