@@ -163,10 +163,16 @@ def _json_entries(document):
                 source = item.get("uri") or item.get("url") or item.get("link")
                 if isinstance(source, str):
                     entries.append(source.strip())
+                elif isinstance(item.get("outbounds"), list):
+                    nested_entries, nested_skipped = _json_entries(item)
+                    entries.extend(nested_entries)
+                    skipped.extend(nested_skipped)
                 elif item.get("protocol") == "vless":
                     entries.append(json.dumps({"outbounds": [item]}, ensure_ascii=False))
                 else:
                     skipped.append("JSON-узел с неподдерживаемой структурой")
+        if len(entries) + len(skipped) > MAX_ENTRIES:
+            raise SubscriptionError("В подписке слишком много серверов.")
         return entries, skipped
     raise SubscriptionError("Формат JSON подписки не распознан.")
 
