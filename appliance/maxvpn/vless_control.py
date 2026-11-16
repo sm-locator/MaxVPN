@@ -355,9 +355,14 @@ def _identity(profile):
         str(profile.get("uuid", "")).lower(),
         profile.get("flow"),
         profile.get("network", "tcp"),
+        # Distinguish security modes and REALITY uTLS fingerprints.
+        # They affect the generated sing-box outbound and may be required
+        # to establish a working connection.
+        profile.get("security", "none"),
         str(reality.get("server_name", "")).lower(),
         reality.get("public_key"),
         reality.get("short_id"),
+        reality.get("fingerprint"),
     )
 
 
