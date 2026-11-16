@@ -780,6 +780,24 @@
   </div>
 
   <div class="card" style="margin-top:18px">
+    <h2>Импорт из HTTPS-подписки</h2>
+    <p class="muted">Вставьте ссылку подписки от VPN-провайдера. Сначала MaxVPN покажет совместимые и пропущенные серверы. Это разовый импорт, без удаления прежних профилей и без автоматического изменения маршрутов.</p>
+    <div class="vless-form">
+      <input id="vlessSubscriptionUrl" class="input" type="password" autocomplete="off" spellcheck="false" placeholder="https://provider.example/subscription/секретный-токен" oninput="vlessSubscriptionPreview=null;$('vlessSubscriptionResults').textContent='';">
+      <div class="actions">
+        <select id="vlessSubscriptionClient" class="select" onchange="vlessSubscriptionPreview=null;$('vlessSubscriptionResults').textContent='';">
+          <option value="standard">Обычная подписка (v2rayN)</option>
+          <option value="happ">HAPP</option>
+        </select>
+        <button type="button" class="btn ghost" id="vlessSubscriptionPreviewButton" onclick="previewVlessSubscription()">Проверить подписку</button>
+        <button type="button" class="btn primary" id="vlessSubscriptionImportButton" onclick="importVlessSubscription()" disabled>Добавить совместимые серверы</button>
+      </div>
+      <div id="vlessSubscriptionResults" class="muted" role="status" aria-live="polite"></div>
+      <p class="vless-small-note">Ссылка может содержать токен доступа. Она передаётся только локальному API MaxVPN и не показывается в результатах. Перенаправления на другой домен и внутренние IP запрещены. Автообновление подписок в этой версии не выполняется.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
     <h2>Автовыбор и управление sing-box</h2>
     <div class="form">
       <label>Интервал проверки<br><select id="vlessInterval" class="select"><option value="30s">30 секунд</option><option value="1m">1 минута</option><option value="2m">2 минуты</option><option value="3m">3 минуты</option><option value="5m">5 минут</option><option value="10m">10 минут</option></select></label>
@@ -3862,6 +3880,47 @@ async function refreshVless(){try{state.vless=await api('/api/appliance/v1/vless
 async function setVpnMode(mode){const current=state.vless?.traffic_mode||'unknown';if(current===mode)return;if(!confirm(`Переключить основной маршрут LAN на режим ${({wan:'WAN',vpn:'AmneziaWG',vless:'VLESS + REALITY'})[mode]||mode}? DIRECT-исключения Smart Routing сохранятся.`))return;try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vpn/mode',{method:'POST',body:JSON.stringify({mode})});state.vless={...(state.vless||{}),...result};await refreshAll();alert(`Режим подтверждён: ${({wan:'WAN',vpn:'AmneziaWG',vless:'VLESS + REALITY'})[result.traffic_mode||mode]||mode}`)}catch(e){alert('Не удалось переключить режим: '+e.message);await refreshAll()}finally{state.vlessBusy=false;renderVless()}}
 async function importVlessProfiles(){const input=$('vlessImportSource').value.trim();if(!input){alert('Вставьте ссылки VLESS или выберите JSON-файл экспорта.');return}let payload;try{if(input.startsWith('{')){payload=JSON.parse(input);if(!payload.profiles&&!payload.sources){payload={sources:[input]}}}else{payload={sources:input.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}}}catch(e){alert('JSON не распознан: '+e.message);return}try{state.vlessBusy=true;renderVless();$('vlessImportButton').disabled=true;const result=await api('/api/appliance/v1/vless/import',{method:'POST',body:JSON.stringify(payload)});state.vlessDelays={};state.vless=await api('/api/appliance/v1/vless');render();alert(`Импорт завершён. Добавлено: ${result.imported||0}; обновлено: ${result.updated||0}; ошибок: ${result.failed||0}. Нажмите «Применить и запустить / перезапустить», чтобы применить список.`)}catch(e){alert('Импорт не выполнен: '+e.message)}finally{state.vlessBusy=false;$('vlessImportButton').disabled=false;renderVless()}}
 function loadVlessImportFile(event){const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{$('vlessImportSource').value=String(reader.result||'')};reader.onerror=()=>alert('Не удалось прочитать выбранный файл.');reader.readAsText(file)}
+let vlessSubscriptionPreview=null;
+
+async function previewVlessSubscription(){
+  const url=$('vlessSubscriptionUrl').value.trim();
+  const client=$('vlessSubscriptionClient').value;
+  const results=$('vlessSubscriptionResults');
+  const button=$('vlessSubscriptionPreviewButton');
+  vlessSubscriptionPreview=null;
+  $('vlessSubscriptionImportButton').disabled=true;
+  if(!url.startsWith('https://')){results.textContent='Требуется HTTPS-ссылка подписки.';return;}
+  button.disabled=true;results.textContent='Проверяем подписку…';
+  try{
+    const preview=await api('/api/appliance/v1/vless/subscription/preview',{method:'POST',body:JSON.stringify({url,client})});
+    vlessSubscriptionPreview={url,client,digest:preview.digest};
+    const items=(preview.servers||[]).map(p=>'<li>'+vlessEscape(p.name)+' — '+vlessEscape(p.address)+':'+vlessEscape(p.port)+'</li>').join('');
+    const errors=(preview.errors||[]).slice(0,10).map(p=>'<li>'+vlessEscape(p.reason||'Неподдерживаемый профиль')+'</li>').join('');
+    results.innerHTML='<p>Совместимых: '+Number(preview.compatible||0)+'; пропущено: '+Number(preview.unsupported||0)+'.</p>'+(items?'<ul>'+items+'</ul>':'')+(errors?'<details><summary>Причины пропуска</summary><ul>'+errors+'</ul></details>':'');
+    $('vlessSubscriptionImportButton').disabled=!preview.compatible;
+  }catch(e){results.textContent='Подписку не удалось проверить: '+(e.message||'ошибка');}
+  finally{button.disabled=false;}
+}
+
+async function importVlessSubscription(){
+  const preview=vlessSubscriptionPreview;
+  const results=$('vlessSubscriptionResults');
+  if(!preview||preview.url!==$('vlessSubscriptionUrl').value.trim()||preview.client!==$('vlessSubscriptionClient').value){
+    results.textContent='Ссылка изменилась. Повторите предпросмотр.';return;
+  }
+  const button=$('vlessSubscriptionImportButton');
+  button.disabled=true;results.textContent='Добавляем совместимые серверы…';
+  try{
+    const result=await api('/api/appliance/v1/vless/subscription/import',{method:'POST',body:JSON.stringify(preview)});
+    vlessSubscriptionPreview=null;
+    state.vlessDelays={};
+    state.vless=await api('/api/appliance/v1/vless');
+    render();
+    results.textContent='Импорт завершён. Добавлено: '+Number(result.imported||0)+', обновлено: '+Number(result.updated||0)+', ошибок: '+Number(result.failed||0)+'. Для запуска новых серверов отдельно нажмите «Применить».';
+  }catch(e){results.textContent='Импорт не выполнен: '+(e.message||'ошибка');}
+  finally{button.disabled=false;}
+}
+
 async function testVlessDelays(){try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vless/delays',{method:'POST'});applyVlessDelayHistory(result.results||[],false);renderVlessProfiles();alert(`Проверка завершена: отвечают ${result.reachable||0} из ${result.total||0} включённых серверов.`)}catch(e){alert('Не удалось проверить задержки: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
 async function selectVless(profileId){try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vless/select',{method:'POST',body:JSON.stringify({profile_id:profileId===undefined?null:profileId})});state.vless=result;await refreshAll();}catch(e){alert('Не удалось выбрать сервер: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
 async function toggleVless(id,enabled){try{state.vlessBusy=true;renderVless();await api('/api/appliance/v1/vless/profiles/'+id,{method:'PATCH',body:JSON.stringify({enabled})});state.vless=await api('/api/appliance/v1/vless');}catch(e){alert('Не удалось изменить профиль: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
