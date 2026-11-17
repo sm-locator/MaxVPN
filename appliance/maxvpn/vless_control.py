@@ -133,7 +133,9 @@ def _normalize_profile(profile):
         endpoint_ip = ipaddress.ip_address(address)
     except ValueError:
         endpoint_ip = None
-    if endpoint_ip is not None and not endpoint_ip.is_global:
+    if endpoint_ip is not None and (
+        not endpoint_ip.is_global or endpoint_ip.is_multicast or endpoint_ip.is_reserved
+    ):
         raise ValueError("Адрес VLESS-сервера не является публичным IP-адресом.")
     if address.lower().rstrip(".") in ("localhost", "localhost.localdomain"):
         raise ValueError("Адрес VLESS-сервера не может указывать на localhost.")
