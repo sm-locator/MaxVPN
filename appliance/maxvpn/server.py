@@ -2693,6 +2693,12 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/appliance/v1/vless/import":
                 data = self.read_json()
                 return self.send_json(200, VLESS_CONTROL.import_profiles(data))
+            if path == "/api/appliance/v1/vless/subscription/preview":
+                data = self.read_json()
+                return self.send_json(200, VLESS_CONTROL.preview_subscription(data))
+            if path == "/api/appliance/v1/vless/subscription/import":
+                data = self.read_json()
+                return self.send_json(200, VLESS_CONTROL.import_subscription(data))
             if path == "/api/appliance/v1/vless/settings":
                 data = self.read_json()
                 return self.send_json(200, VLESS_CONTROL.update_settings(data))
@@ -2826,7 +2832,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_error_json(409, "rule already exists")
         except VlessControlError as e:
             code = (
-                422 if path.endswith("/import") or path.endswith("/settings") else 502
+                422 if path.endswith(("/import", "/settings", "/preview")) else 502
             )
             return self.send_error_json(code, str(e))
         except ValueError as e:
