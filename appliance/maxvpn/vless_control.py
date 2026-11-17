@@ -7,6 +7,7 @@ The module does not change routing unless set_mode() is explicitly called.
 
 import copy
 import json
+import ipaddress
 import datetime as _selection_datetime
 import uuid
 import os
@@ -125,6 +126,17 @@ def _normalize_profile(profile):
     address = str(profile.get("address") or "").strip()
     if not address or len(address) > 253 or any(ch.isspace() for ch in address):
         raise ValueError("Некорректный адрес VLESS-сервера.")
+    # Subscription providers can return placeholder nodes such as 0.0.0.0:1
+    # for a device that is not authorised to receive the actual endpoints.
+    # Never accept non-routable IP literals as remote VLESS endpoints.
+    try:
+        endpoint_ip = ipaddress.ip_address(address)
+    except ValueError:
+        endpoint_ip = None
+    if endpoint_ip is not None and not endpoint_ip.is_global:
+        raise ValueError("Адрес VLESS-сервера не является публичным IP-адресом.")
+    if address.lower().rstrip(".") in ("localhost", "localhost.localdomain"):
+        raise ValueError("Адрес VLESS-сервера не может указывать на localhost.")
     try:
         port = int(profile.get("port"))
     except (TypeError, ValueError):
@@ -1246,8 +1258,9 @@ class VlessControl:
                     parsed = _parse_happ_json(source)
                 identity = _identity(parsed)
                 is_alias = identity in seen_connections
-                seen_connections.add(identity)
-                compatible.append(source)
+                if not is_alias:
+                    seen_connections.add(identity)
+                    compatible.append(source)
                 preview.append({
                     "status": "alias" if is_alias else "supported",
                     "name": parsed["name"],
