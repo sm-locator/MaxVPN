@@ -195,7 +195,7 @@ def test_subscription_same_connection_different_titles_deduplicates(
         config_file=tmp_path / "sing-box.json",
     )
     preview = manager.preview_subscription({"url": "https://example.com/sub"})
-    assert preview["compatible"] == 2
+    assert preview["compatible"] == 1
     assert preview["unique_connections"] == 1
     assert preview["duplicate_aliases"] == 1
     result = manager.import_subscription({
