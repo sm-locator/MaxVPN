@@ -202,7 +202,7 @@ def test_subscription_same_connection_different_titles_deduplicates(
         "url": "https://example.com/sub", "digest": digest,
     })
     assert result["imported"] == 1
-    assert result["updated"] == 1
+    assert result["updated"] == 0
     assert len(manager._load_store()["profiles"]) == 1
 
 
@@ -229,3 +229,103 @@ def test_subscription_distinct_fingerprints_are_not_merged(tmp_path, monkeypatch
     assert result["imported"] == 2
     assert result["updated"] == 0
     assert len(manager._load_store()["profiles"]) == 2
+
+
+@pytest.mark.parametrize("address", [
+    "0.0.0.0",
+    "127.0.0.1",
+    "169.254.1.1",
+    "192.168.8.1",
+    "224.0.0.1",
+    "255.255.255.255",
+    "[::]",
+    "[::1]",
+    "localhost",
+])
+def test_direct_vless_uri_rejects_non_public_endpoints(address):
+    source = LINK.replace("node.example.com", address)
+    with pytest.raises(ValueError, match="адрес|Адрес"):
+        vless_control._parse_vless_uri(source)
+
+
+def test_fictitious_happ_subscription_nodes_rejected_without_write(tmp_path, monkeypatch):
+    # A real provider supplied this kind of placeholder instead of usable nodes.
+    first = LINK.replace("node.example.com:443", "0.0.0.0:1")
+    second = first.replace("#Sweden", "#Finland")
+    raw = first + "\n" + second + "\n"
+    digest = hashlib.sha256(raw.encode()).hexdigest()
+    monkeypatch.setattr(
+        vless_control, "fetch_subscription",
+        lambda url, client="standard": (raw, digest),
+    )
+    control = VlessControl(
+        profile_file=tmp_path / "profiles.json",
+        config_file=tmp_path / "sing-box.json",
+    )
+    preview = control.preview_subscription({
+        "url": "https://example.com/sub", "client": "happ",
+    })
+    assert preview["compatible"] == 0
+    assert preview["unique_connections"] == 0
+    assert preview["unsupported"] == 2
+    assert "0.0.0.0" not in json.dumps(preview)
+    assert UUID not in json.dumps(preview)
+    with pytest.raises(VlessControlError, match="нет серверов"):
+        control.import_subscription({
+            "url": "https://example.com/sub", "client": "happ",
+            "digest": digest,
+        })
+    assert not (tmp_path / "profiles.json").exists()
+    assert not (tmp_path / "sing-box.json").exists()
+
+
+def test_subscription_skips_placeholder_but_imports_public_hostname(tmp_path, monkeypatch):
+    invalid = LINK.replace("node.example.com:443", "0.0.0.0:1")
+    raw = invalid + "\n" + LINK + "\n"
+    digest = hashlib.sha256(raw.encode()).hexdigest()
+    monkeypatch.setattr(
+        vless_control, "fetch_subscription",
+        lambda url, client="standard": (raw, digest),
+    )
+    monkeypatch.setattr(vless_control, "BACKUP_DIR", tmp_path / "backups")
+    control = VlessControl(
+        profile_file=tmp_path / "profiles.json",
+        config_file=tmp_path / "sing-box.json",
+    )
+    preview = control.preview_subscription({"url": "https://example.com/sub"})
+    assert preview["compatible"] == 1
+    assert preview["unique_connections"] == 1
+    assert preview["unsupported"] == 1
+    result = control.import_subscription({
+        "url": "https://example.com/sub", "digest": digest,
+    })
+    assert result["imported"] == 1
+    assert result["updated"] == 0
+    assert len(control._load_store()["profiles"]) == 1
+    assert not (tmp_path / "sing-box.json").exists()
+
+
+def test_direct_vless_link_import_without_runtime_apply(tmp_path, monkeypatch):
+    monkeypatch.setattr(vless_control, "BACKUP_DIR", tmp_path / "backups")
+    control = VlessControl(
+        profile_file=tmp_path / "profiles.json",
+        config_file=tmp_path / "sing-box.json",
+    )
+    result = control.import_profiles({"sources": [LINK]})
+    assert result["imported"] == 1
+    assert result["failed"] == 0
+    assert len(control._load_store()["profiles"]) == 1
+    assert not (tmp_path / "sing-box.json").exists()
+
+
+def test_placeholder_xray_json_profile_rejected():
+    source = json.dumps({"outbounds": [{
+        "protocol": "vless",
+        "settings": {"vnext": [{
+            "address": "0.0.0.0",
+            "port": 1,
+            "users": [{"id": UUID}],
+        }]},
+    }]})
+    with pytest.raises(ValueError, match="адрес|Адрес"):
+        vless_control._parse_happ_json(source)
