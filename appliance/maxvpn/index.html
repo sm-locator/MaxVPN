@@ -770,7 +770,7 @@
 
   <div class="card" style="margin-top:18px">
     <h2>Импорт серверов</h2>
-    <p class="muted">Вставьте до 50 ссылок <code>vless://</code> по одной на строку или содержимое файла экспорта из панели localhost:8080. Можно выбрать JSON-файл напрямую.</p>
+    <p class="muted">Для одного сервера вставьте ссылку <code>vless://</code> целиком. Для нескольких — по одной на строку. Можно также выбрать JSON-файл экспорта из панели localhost:8080.</p>
     <div class="vless-form">
       <input id="vlessImportFile" class="input" type="file" accept=".json,.txt,application/json,text/plain" onchange="loadVlessImportFile(event)">
       <textarea id="vlessImportSource" class="input" placeholder="vless://UUID@server:443?...&#10;&#10;Или вставьте JSON maxvpn-vless-profiles.json"></textarea>
@@ -781,7 +781,7 @@
 
   <div class="card" style="margin-top:18px">
     <h2>Импорт из HTTPS-подписки</h2>
-    <p class="muted">Вставьте ссылку подписки от VPN-провайдера. Сначала MaxVPN покажет совместимые и пропущенные серверы. Это разовый импорт, без удаления прежних профилей и без автоматического изменения маршрутов.</p>
+    <p class="muted">Вставьте ссылку подписки от VPN-провайдера. MaxVPN покажет уникальные совместимые серверы, повторы и отклонённые узлы (например, 0.0.0.0:1). Это разовый импорт, без удаления прежних профилей и без автоматического изменения маршрутов.</p>
     <div class="vless-form">
       <input id="vlessSubscriptionUrl" class="input" type="password" autocomplete="off" spellcheck="false" placeholder="https://provider.example/subscription/секретный-токен" oninput="vlessSubscriptionPreview=null;$('vlessSubscriptionResults').textContent='';">
       <div class="actions">
@@ -3894,9 +3894,9 @@ async function previewVlessSubscription(){
   try{
     const preview=await api('/api/appliance/v1/vless/subscription/preview',{method:'POST',body:JSON.stringify({url,client})});
     vlessSubscriptionPreview={url,client,digest:preview.digest};
-    const items=(preview.servers||[]).map(p=>'<li>'+vlessEscape(p.name)+' — '+vlessEscape(p.address)+':'+vlessEscape(p.port)+'</li>').join('');
+    const items=(preview.servers||[]).map(p=>'<li>'+vlessEscape(p.name)+' — '+vlessEscape(p.address)+':'+vlessEscape(p.port)+(p.status==='alias'?' (повтор того же подключения)':'')+'</li>').join('');
     const errors=(preview.errors||[]).slice(0,10).map(p=>'<li>'+vlessEscape(p.reason||'Неподдерживаемый профиль')+'</li>').join('');
-    results.innerHTML='<p>Совместимых ссылок: '+Number(preview.compatible||0)+'; уникальных подключений: '+Number(preview.unique_connections||0)+'; повторных названий/алиасов: '+Number(preview.duplicate_aliases||0)+'; неподдерживаемых: '+Number(preview.unsupported||0)+'.</p>'+(items?'<ul>'+items+'</ul>':'')+(errors?'<details><summary>Причины пропуска</summary><ul>'+errors+'</ul></details>':'');
+    results.innerHTML='<p>Уникальных совместимых подключений: '+Number(preview.compatible||0)+'; повторов/алиасов: '+Number(preview.duplicate_aliases||0)+'; отклонено: '+Number(preview.unsupported||0)+'.</p>'+(items?'<ul>'+items+'</ul>':'')+(errors?'<details><summary>Причины пропуска</summary><ul>'+errors+'</ul></details>':'');
     $('vlessSubscriptionImportButton').disabled=!preview.compatible;
   }catch(e){results.textContent='Подписку не удалось проверить: '+(e.message||'ошибка');}
   finally{button.disabled=false;}
