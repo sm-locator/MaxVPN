@@ -45,6 +45,8 @@ ALLOWED_INTERVALS = ("30s", "1m", "2m", "3m", "5m", "10m")
 WAN_FALLBACK_FAILURE_THRESHOLD = 2
 WAN_FALLBACK_RECOVERY_THRESHOLD = 2
 RUNTIME_LOCK_FILE = ROOT / "run" / "apply.lock"
+WATCHDOG_SCRIPT = Path("/usr/bin/maxvpn-vless-watchdog")
+WATCHDOG_ROUTING_LOCK_VERSION = "MAXVPN_SHARED_ROUTE_LOCK_V1"
 LOCK = threading.RLock()
 
 
@@ -1598,6 +1600,14 @@ class VlessControl:
             )
         was_vless = mode == "vless"
         if was_vless:
+            # The live pre-2026-11-21 watchdog repairs VLESS without any
+            # route mutex. Refuse destructive VLESS-mode operations until a
+            # reviewed, shared-lock watchdog has been installed.
+            if not self._watchdog_routing_lock_compatible():
+                raise VlessControlError(
+                    "Установленный VLESS watchdog не поддерживает общую "
+                    "блокировку маршрутов. Обновите watchdog перед удалением."
+                )
             if store["settings"].get("wan_fallback_enabled") is not True:
                 raise VlessControlError(
                     "LAN использует VLESS с Kill Switch. Сначала выберите другой защищённый маршрут."
@@ -1657,6 +1667,22 @@ class VlessControl:
                 "Удаление отменено: профили сохранены, маршрут VLESS восстановлен."
             ) from None
         return {"deleted": len(store["profiles"]), "traffic_mode": mode}
+
+    @staticmethod
+    def _watchdog_routing_lock_compatible():
+        try:
+            content = WATCHDOG_SCRIPT.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            # No watchdog script: there is no automatic competing repair.
+            return True
+        except (OSError, UnicodeError):
+            return False
+        return (
+            WATCHDOG_ROUTING_LOCK_VERSION in content
+            and "/opt/maxvpn-appliance/run/apply.lock" in content
+            and 'with_routing_lock "$VLESS_ON"' in content
+            and 'with_routing_lock "$SING_BOX_INIT" "$SERVICE_ACTION"' in content
+        )
 
     def _service_enabled(self):
         if not SERVICE.is_file():
