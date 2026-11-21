@@ -394,7 +394,7 @@ def test_legacy_unlocked_watchdog_blocks_bulk_delete_before_route_mutation(
     vc.MODE_FILE.write_text("vless")
     c.update_settings({"wan_fallback_enabled": True})
     vc.WATCHDOG_SCRIPT.write_text(
-        "#!/bin/sh\\n# old watchdog without shared route lock\\n"
+        "#!/bin/sh\n# old watchdog without shared route lock\n"
     )
     before = c.profile_file.read_bytes()
     with pytest.raises(vc.VlessControlError, match="watchdog"):
@@ -426,12 +426,12 @@ def test_reviewed_shared_lock_watchdog_permits_vless_delete(
     proc = vc.PROC_ROOT / "4242"
     proc.mkdir(parents=True)
     proc.joinpath("stat").write_text(
-        "4242 (sh) S " + " ".join(["0"] * 18 + ["12345"]) + "\\n"
+        "4242 (sh) S " + " ".join(["0"] * 18 + ["12345"]) + "\n"
     )
     proc.joinpath("cmdline").write_bytes(
-        b"/bin/sh\\0/usr/bin/maxvpn-vless-watchdog\\0"
+        b"/bin/sh\0/usr/bin/maxvpn-vless-watchdog\0"
     )
-    ready.write_text("4242 12345\\n")
+    ready.write_text("4242 12345\n")
     switched = _emulate_vless_mode_switch(c, monkeypatch)
 
     result = c.delete_all_profiles(dict(confirmation(c), allow_wan=True))
