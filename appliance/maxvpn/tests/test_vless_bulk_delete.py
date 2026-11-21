@@ -188,3 +188,114 @@ def test_failed_wan_transition_does_not_stop_service_or_remove_profiles(
         c.delete_all_profiles(dict(confirmation(c), allow_wan=True))
     assert len(c._load_store()["profiles"]) == 2
     assert service == {"running": True, "enabled": True}
+
+
+def _emulate_vless_mode_switch(c, monkeypatch):
+    switched = []
+
+    def switch(mode, **_kwargs):
+        switched.append(mode)
+        vc.MODE_FILE.write_text(mode)
+        return {}
+
+    monkeypatch.setattr(c, "set_mode", switch)
+    return switched
+
+
+def test_vless_delete_rolls_back_wan_route_when_store_write_fails(
+    appliance, monkeypatch
+):
+    c, service, _ = appliance
+    vc.MODE_FILE.write_text("vless")
+    c.update_settings({"wan_fallback_enabled": True})
+    before = c.profile_file.read_bytes()
+    switched = _emulate_vless_mode_switch(c, monkeypatch)
+    request = dict(confirmation(c), allow_wan=True)
+
+    def fail_write(*_args, **_kwargs):
+        raise OSError("private-fixture")
+
+    monkeypatch.setattr(c, "_save_store", fail_write)
+    with pytest.raises(vc.VlessControlError, match="маршрут VLESS восстановлен"):
+        c.delete_all_profiles(request)
+
+    assert switched == ["wan", "vless"]
+    assert vc.MODE_FILE.read_text() == "vless"
+    assert c.profile_file.read_bytes() == before
+    assert service == {"enabled": True, "running": True}
+
+
+def test_vless_delete_rolls_back_wan_route_when_stop_fails(appliance, monkeypatch):
+    c, service, _ = appliance
+    vc.MODE_FILE.write_text("vless")
+    c.update_settings({"wan_fallback_enabled": True})
+    switched = _emulate_vless_mode_switch(c, monkeypatch)
+    request = dict(confirmation(c), allow_wan=True)
+    original_checked = c._checked
+
+    def checked(args, action, **kwargs):
+        if args == [str(vc.SERVICE), "stop"]:
+            raise vc.VlessControlError("Cannot stop service")
+        return original_checked(args, action, **kwargs)
+
+    monkeypatch.setattr(c, "_checked", checked)
+    with pytest.raises(vc.VlessControlError, match="маршрут VLESS восстановлен"):
+        c.delete_all_profiles(request)
+
+    assert switched == ["wan", "vless"]
+    assert len(c._load_store()["profiles"]) == 2
+    assert service == {"enabled": True, "running": True}
+
+
+def test_vless_delete_never_restores_route_after_store_commit(
+    appliance, monkeypatch
+):
+    c, service, _ = appliance
+    vc.MODE_FILE.write_text("vless")
+    c.update_settings({"wan_fallback_enabled": True})
+    switched = _emulate_vless_mode_switch(c, monkeypatch)
+    request = dict(confirmation(c), allow_wan=True)
+    monkeypatch.setattr(
+        c,
+        "_finish_clear",
+        lambda *_: (_ for _ in ()).throw(OSError("cleanup failed")),
+    )
+    with pytest.raises(
+        vc.VlessControlError, match="Удаление профилей зафиксировано"
+    ):
+        c.delete_all_profiles(request)
+
+    assert switched == ["wan"]
+    assert vc.MODE_FILE.read_text() == "wan"
+    saved = json.loads(c.profile_file.read_text())
+    assert saved["clear_pending"] is True
+    assert saved["profiles"] == []
+    assert service == {"enabled": False, "running": False}
+
+
+def test_failed_vless_rollback_reports_wan_and_keeps_profiles(
+    appliance, monkeypatch
+):
+    c, service, _ = appliance
+    vc.MODE_FILE.write_text("vless")
+    c.update_settings({"wan_fallback_enabled": True})
+    request = dict(confirmation(c), allow_wan=True)
+    switched = []
+
+    def switch(mode, **_kwargs):
+        switched.append(mode)
+        if mode == "vless":
+            raise vc.VlessControlError("VLESS restart failed")
+        vc.MODE_FILE.write_text(mode)
+
+    monkeypatch.setattr(c, "set_mode", switch)
+    monkeypatch.setattr(
+        c, "_clear_inactive_profiles",
+        lambda *_: (_ for _ in ()).throw(OSError("aborted")),
+    )
+    with pytest.raises(vc.VlessControlError, match="LAN остаётся в WAN"):
+        c.delete_all_profiles(request)
+    assert switched == ["wan", "vless"]
+    assert vc.MODE_FILE.read_text() == "wan"
+    assert len(c._load_store()["profiles"]) == 2
+    assert service == {"enabled": True, "running": True}
