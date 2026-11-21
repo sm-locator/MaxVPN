@@ -25,8 +25,16 @@ with_routing_lock() (
     /usr/bin/flock -x 9 || return 1
     # Check the route again after taking the lock. A concurrent deletion
     # may already have put LAN into WAN before the waiter acquires it.
-    [ "$(cat "$RUNTIME_MODE_FILE" 2>/dev/null || true)" = "vless" ] || return 2
+    if [ "$(cat "$RUNTIME_MODE_FILE" 2>/dev/null || true)" != "vless" ]; then
+        /usr/bin/flock -u 9
+        return 2
+    fi
     "$@"
+    result=$?
+    # Do not leave a lock behind if an init script spawns a daemon that
+    # unexpectedly inherits FD 9.
+    /usr/bin/flock -u 9
+    return "$result"
 )
 
 policy_is_healthy() {
