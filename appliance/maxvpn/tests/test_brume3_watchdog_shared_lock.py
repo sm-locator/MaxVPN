@@ -35,7 +35,7 @@ def test_watchdog_has_a_shared_lock_guard_and_preserves_failure_policy():
     assert "/usr/bin/flock -u 9" in source
     assert "MAXVPN_SHARED_ROUTE_LOCK_V1" in source
     assert "watchdog-shared-lock-v1.status" in source
-    assert '"/proc/$/stat"' in source
+    assert '"/proc/$$/stat"' in source
     assert '"$RUNTIME_MODE_FILE" 2>/dev/null || true' in source
     assert 'if with_routing_lock "$VLESS_ON"; then' in source
     assert 'elif with_routing_lock "$VLESS_ON"; then' in source
