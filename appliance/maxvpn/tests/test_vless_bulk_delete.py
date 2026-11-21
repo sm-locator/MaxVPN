@@ -17,6 +17,8 @@ def appliance(tmp_path, monkeypatch):
         "MODE_FILE",
         "RUNTIME_LOCK_FILE",
         "WATCHDOG_SCRIPT",
+        "WATCHDOG_READY_FILE",
+        "PROC_ROOT",
         "DELAY_HISTORY_FILE",
         "BACKUP_DIR",
     ):
@@ -416,6 +418,20 @@ def test_reviewed_shared_lock_watchdog_permits_vless_delete(
         / "brume3-watchdog-locked.sh"
     )
     vc.WATCHDOG_SCRIPT.write_text(script.read_text(encoding="utf-8"))
+    # Merely replacing a watchdog script on disk is not enough: the
+    # already-running sh process can still have the old unguarded code.
+    with pytest.raises(vc.VlessControlError, match="перезапустите watchdog"):
+        c.delete_all_profiles(dict(confirmation(c), allow_wan=True))
+    ready = vc.WATCHDOG_READY_FILE
+    proc = vc.PROC_ROOT / "4242"
+    proc.mkdir(parents=True)
+    proc.joinpath("stat").write_text(
+        "4242 (sh) S " + " ".join(["0"] * 18 + ["12345"]) + "\\n"
+    )
+    proc.joinpath("cmdline").write_bytes(
+        b"/bin/sh\\0/usr/bin/maxvpn-vless-watchdog\\0"
+    )
+    ready.write_text("4242 12345\\n")
     switched = _emulate_vless_mode_switch(c, monkeypatch)
 
     result = c.delete_all_profiles(dict(confirmation(c), allow_wan=True))
