@@ -112,7 +112,10 @@ Bulk removal holds the same `/opt/maxvpn-appliance/run/apply.lock` as the
 appliance Smart Routing server across the LAN transition, store commit, and
 rollback. The installed watchdog must also respect this lock: if the legacy
 unlocked `/usr/bin/maxvpn-vless-watchdog` is present, VLESS-mode bulk removal
-is rejected before changing any route or profile. An isolated candidate matching
+is rejected before changing any route or profile. Replacing the watchdog file
+alone is insufficient: the running watchdog must restart and publish its
+PID plus kernel start ticks in `run/watchdog-shared-lock-v1.status`, verified
+against `/proc` by the API. An isolated candidate matching
 the inspected GL-MT5000 watchdog is staged in
 `appliance/maxvpn/compat/brume3-watchdog-locked.sh`. It is **not** installed
 automatically. Follow the device-specific deployment gate at
