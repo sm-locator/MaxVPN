@@ -107,3 +107,14 @@ The profile outage journal remains based only on confirmed probe outcomes.
 During a VLESS-mode bulk delete, an error before committing the empty profile
 store attempts to restore the previous VLESS route; after commit the route is
 never restored using removed profiles.
+
+Bulk removal holds the same `/opt/maxvpn-appliance/run/apply.lock` as the
+appliance Smart Routing server across the LAN transition, store commit, and
+rollback. The installed watchdog must also respect this lock: if the legacy
+unlocked `/usr/bin/maxvpn-vless-watchdog` is present, VLESS-mode bulk removal
+is rejected before changing any route or profile. An isolated candidate matching
+the inspected GL-MT5000 watchdog is staged in
+`appliance/maxvpn/compat/brume3-watchdog-locked.sh`. It is **not** installed
+automatically. Follow the device-specific deployment gate at
+`docs/deployments/brume3-vless-bulk-delete-20261121.md`; never blindly replace
+the existing live routing helpers or firewall setup.
