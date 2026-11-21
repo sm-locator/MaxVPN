@@ -1,3 +1,4 @@
+import fcntl
 import json
 import sys
 from pathlib import Path
@@ -297,5 +298,83 @@ def test_failed_vless_rollback_reports_wan_and_keeps_profiles(
         c.delete_all_profiles(request)
     assert switched == ["wan", "vless"]
     assert vc.MODE_FILE.read_text() == "wan"
+    assert len(c._load_store()["profiles"]) == 2
+    assert service == {"enabled": True, "running": True}
+
+
+def _can_take_routing_lock():
+    with vc.RUNTIME_LOCK_FILE.open("a") as probe:
+        try:
+            fcntl.flock(probe.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return False
+        fcntl.flock(probe.fileno(), fcntl.LOCK_UN)
+        return True
+
+
+def test_bulk_delete_uses_smart_routing_apply_lock():
+    from appliance.maxvpn import server
+
+    assert vc.RUNTIME_LOCK_FILE == server.LOCK
+
+
+def test_bulk_delete_holds_routing_lock_during_wan_transition_and_commit(
+    appliance, monkeypatch
+):
+    c, service, _ = appliance
+    vc.MODE_FILE.write_text("vless")
+    c.update_settings({"wan_fallback_enabled": True})
+    request = dict(confirmation(c), allow_wan=True)
+    observed = []
+
+    def switch(mode, **_kwargs):
+        observed.append(("switch", mode, _can_take_routing_lock()))
+        vc.MODE_FILE.write_text(mode)
+        return {}
+
+    original_clear = c._clear_inactive_profiles
+
+    def clear(store, revision):
+        observed.append(("clear", vc.MODE_FILE.read_text(), _can_take_routing_lock()))
+        return original_clear(store, revision)
+
+    monkeypatch.setattr(c, "set_mode", switch)
+    monkeypatch.setattr(c, "_clear_inactive_profiles", clear)
+    assert _can_take_routing_lock()
+    assert c.delete_all_profiles(request)["traffic_mode"] == "wan"
+    assert observed == [
+        ("switch", "wan", False),
+        ("clear", "wan", False),
+    ]
+    assert _can_take_routing_lock()
+    assert service == {"enabled": False, "running": False}
+
+
+def test_bulk_delete_holds_routing_lock_during_error_rollback(
+    appliance, monkeypatch
+):
+    c, service, _ = appliance
+    vc.MODE_FILE.write_text("vless")
+    c.update_settings({"wan_fallback_enabled": True})
+    request = dict(confirmation(c), allow_wan=True)
+    original_clear = c._clear_inactive_profiles
+    observed = []
+
+    def switch(mode, **_kwargs):
+        observed.append((mode, _can_take_routing_lock()))
+        vc.MODE_FILE.write_text(mode)
+        return {}
+
+    def fail_clear(*_args):
+        assert not _can_take_routing_lock()
+        raise vc.VlessControlError("Cannot clear")
+
+    monkeypatch.setattr(c, "set_mode", switch)
+    monkeypatch.setattr(c, "_clear_inactive_profiles", fail_clear)
+    with pytest.raises(vc.VlessControlError, match="маршрут VLESS восстановлен"):
+        c.delete_all_profiles(request)
+    assert observed == [("wan", False), ("vless", False)]
+    assert _can_take_routing_lock()
+    assert vc.MODE_FILE.read_text() == "vless"
     assert len(c._load_store()["profiles"]) == 2
     assert service == {"enabled": True, "running": True}
