@@ -14,6 +14,7 @@ unhealthy_ticks=0
 restart_cooldown=0
 policy_repair_cooldown=0
 
+# MAXVPN_SHARED_ROUTE_LOCK_V1
 # Based on the installed GL-MT5000 watchdog inspected 2026-11-21.
 # Only mutation calls acquire the shared Smart Routing lock; never sleep with it.
 ROUTE_LOCK=${MAXVPN_APPLIANCE_ROUTE_LOCK:-/opt/maxvpn-appliance/run/apply.lock}
