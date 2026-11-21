@@ -24,10 +24,10 @@ WATCHDOG_READY_FILE=${MAXVPN_WATCHDOG_READY_FILE:-/opt/maxvpn-appliance/run/watc
 # Publish the PID and kernel start ticks of *this* lock-aware watchdog. The API
 # requires them to match /proc before allowing destructive operations.
 if [ -x /usr/bin/flock ] && [ -d "${ROUTE_LOCK%/*}" ]; then
-    watchdog_start_ticks="$(awk '{print $22}' "/proc/$/stat" 2>/dev/null || true)"
+    watchdog_start_ticks="$(awk '{print $22}' "/proc/$$/stat" 2>/dev/null || true)"
     case "$watchdog_start_ticks" in
         ''|*[!0-9]*) ;;
-        *) (umask 077; printf '%s %s\n' "$" "$watchdog_start_ticks" > "$WATCHDOG_READY_FILE") || true ;;
+        *) (umask 077; printf '%s %s\n' "$$" "$watchdog_start_ticks" > "$WATCHDOG_READY_FILE") || true ;;
     esac
 fi
 
