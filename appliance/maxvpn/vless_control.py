@@ -727,11 +727,13 @@ class VlessControl:
         self._next_availability_compaction = 0
         self.availability_file = self.selection_history_file.with_suffix(".sqlite3")
         self._wan_fallback_runtime_failures = 0
+        self._wan_fallback_control_api_failures = 0
         self._wan_fallback_profile_counters = {}
         self._wan_fallback_probe_scope = None
 
     def _reset_wan_fallback_monitor_state(self):
         self._wan_fallback_runtime_failures = 0
+        self._wan_fallback_control_api_failures = 0
         self._wan_fallback_profile_counters = {}
         self._wan_fallback_probe_scope = None
 
@@ -1585,22 +1587,68 @@ class VlessControl:
             raise VlessControlError(
                 "Kill Switch включён. Сначала восстановите защищённый маршрут LAN."
             )
-        if mode == "vless":
+        was_vless = mode == "vless"
+        if was_vless:
             if store["settings"].get("wan_fallback_enabled") is not True:
                 raise VlessControlError(
                     "LAN использует VLESS с Kill Switch. Сначала выберите другой защищённый маршрут."
                 )
             if data.get("allow_wan") is not True:
                 raise VlessControlError("Подтвердите переход LAN напрямую на WAN.")
-            self.set_mode("wan")
-            mode = "wan"
 
-        # Routing helpers and the watchdog use this same appliance-wide lock.
-        with RUNTIME_LOCK_FILE.open("a") as route_lock:
-            fcntl.flock(route_lock, fcntl.LOCK_EX)
-            if self._read_mode() != mode:
-                raise VlessControlError("Маршрут LAN изменился. Удаление отменено.")
-            self._clear_inactive_profiles(store, data["revision"])
+        try:
+            if was_vless:
+                self.set_mode("wan")
+                mode = "wan"
+
+            # Protect the committed removal against concurrent routing recovery.
+            with RUNTIME_LOCK_FILE.open("a") as route_lock:
+                fcntl.flock(route_lock, fcntl.LOCK_EX)
+                if self._read_mode() != mode:
+                    raise VlessControlError("Маршрут LAN изменился. Удаление отменено.")
+                self._clear_inactive_profiles(store, data["revision"])
+        except Exception:
+            if not was_vless:
+                raise
+
+            # A crash after the atomic empty-store rename must never restore
+            # VLESS using profiles that have already been deleted.
+            saved = _read_json_file(self.profile_file)
+            if saved is None:
+                raise VlessControlError(
+                    "Не удалось проверить состояние списка после ошибки удаления. "
+                    "Проверьте сохранённые профили и маршрут LAN."
+                ) from None
+            committed = (
+                saved.get("last_clear_revision") == data["revision"]
+                and saved.get("profiles") == []
+            )
+            if committed:
+                raise VlessControlError(
+                    "Удаление профилей зафиксировано, но очистка не завершилась. "
+                    "LAN оставлен в WAN. Проверьте состояние сервиса."
+                ) from None
+
+            # Until the empty store is committed, restore the previous VLESS
+            # route only when WAN is still selected. Never overwrite a route
+            # that another actor selected during the operation.
+            current_mode = self._read_mode()
+            if current_mode == "wan":
+                try:
+                    self.set_mode("vless")
+                except Exception:
+                    raise VlessControlError(
+                        "Профили сохранены, но восстановление VLESS не удалось. "
+                        "LAN остаётся в WAN. Проверьте сервис и маршрутизацию."
+                    ) from None
+            elif current_mode != "vless":
+                raise VlessControlError(
+                    "Удаление отменено. Маршрут LAN изменился извне; "
+                    "проверьте его вручную."
+                ) from None
+            raise VlessControlError(
+                "Удаление отменено: профили сохранены, маршрут VLESS восстановлен."
+            ) from None
         return {"deleted": len(store["profiles"]), "traffic_mode": mode}
 
     def _service_enabled(self):
@@ -2657,6 +2705,9 @@ class VlessControl:
                 "profile_id": int(profile["id"]),
                 "delay_ms": delay,
                 "reachable": reachable,
+                # Distinguish a down local Clash API from an individual
+                # server failure; only the former may trigger WAN fallback.
+                "api_unreachable": result.returncode in (7, 28, 52, 56),
                 "checked_at": _timestamp_iso(_utc_now()),
             }
 
@@ -2807,17 +2858,53 @@ class VlessControl:
         )
         if self._wan_fallback_probe_scope != probe_scope:
             self._wan_fallback_profile_counters = {}
+            self._wan_fallback_control_api_failures = 0
             self._wan_fallback_probe_scope = probe_scope
 
         try:
             results = self._probe_profiles(profiles)
         except Exception as exc:
             return {"action": "probe-failed", "error": str(exc)[:180]}
-        if len(results) != len(profiles) or any(
-            r["reachable"] is None for r in results
-        ):
+        if len(results) != len(profiles):
+            self._wan_fallback_control_api_failures = 0
+            return {"action": "probe-incomplete", "active": state.get("active") is True}
+        if any(r["reachable"] is None for r in results):
+            # An unavailable local Clash control plane must not be recorded
+            # as a failure of each VPN server. However, repeatedly losing
+            # *all* local API connections is a runtime failure when Kill
+            # Switch is OFF, so permit the existing WAN recovery policy.
+            all_api_down = all(
+                r.get("reachable") is None and r.get("api_unreachable") is True
+                for r in results
+            )
+            if mode == "vless" and all_api_down:
+                self._wan_fallback_control_api_failures += 1
+                if (
+                    self._wan_fallback_control_api_failures
+                    >= WAN_FALLBACK_FAILURE_THRESHOLD
+                ):
+                    state["active"] = True
+                    state["selection_mode"] = selection_mode
+                    state["fallback_started_at"] = _timestamp_iso(_utc_now())
+                    self._save_wan_fallback_state(state)
+                    try:
+                        self.set_mode("wan", automatic_fallback=True)
+                    except Exception as exc:
+                        state["active"] = False
+                        state["selection_mode"] = None
+                        state["fallback_started_at"] = None
+                        self._save_wan_fallback_state(state)
+                        return {
+                            "action": "fallback-failed",
+                            "error": str(exc)[:180],
+                        }
+                    self._wan_fallback_control_api_failures = 0
+                    return {"action": "fallback-to-wan", "active": True}
+                return {"action": "control-api-unreachable", "active": False}
+            self._wan_fallback_control_api_failures = 0
             return {"action": "probe-incomplete", "active": state.get("active") is True}
 
+        self._wan_fallback_control_api_failures = 0
         counters = self._wan_fallback_profile_counters
         for result in results:
             key = str(result["profile_id"])
