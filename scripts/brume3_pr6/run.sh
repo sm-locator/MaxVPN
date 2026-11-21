@@ -35,12 +35,12 @@ case "$ACTION" in
   *) die "unsupported action; deploy is not available" ;;
 esac
 
-: "\${MAXVPN_ROUTER:?Set MAXVPN_ROUTER=root@192.168.8.1 explicitly}"
+: "${MAXVPN_ROUTER:?Set MAXVPN_ROUTER=root@192.168.8.1 explicitly}"
 [[ "$MAXVPN_ROUTER" =~ ^[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.:-]+$ ]] ||
   die "MAXVPN_ROUTER must be user@hostname or user@IP"
 [[ "$MAXVPN_ROUTER" == root@* ]] || die "Brume3 operations require root SSH"
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "\${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE="$SCRIPT_DIR/router_snapshot.py"
 [[ -f "$SOURCE" ]] || die "router_snapshot.py is missing"
 command -v ssh >/dev/null 2>&1 || die "ssh is missing"
