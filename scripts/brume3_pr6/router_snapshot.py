@@ -304,7 +304,9 @@ def restore(ident, confirmation):
                         dest.flush()
                         os.fsync(dest.fileno())
                     os.chmod(temp, original["mode"])
-                    os.chown(temp, original["uid"], original["gid"])
+                    st = os.stat(temp)
+                    if st.st_uid != original["uid"] or st.st_gid != original["gid"]:
+                        os.chown(temp, original["uid"], original["gid"])
                 except Exception:
                     os.unlink(temp)
                     raise
