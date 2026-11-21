@@ -315,7 +315,11 @@ def _can_take_routing_lock():
 def test_bulk_delete_uses_smart_routing_apply_lock():
     from appliance.maxvpn import server
 
-    assert vc.RUNTIME_LOCK_FILE == server.LOCK
+    # Tests may set MAXVPN_APPLIANCE_ROOT for server.py only. The deployed
+    # appliance has the same root for both modules; verify the common
+    # lock naming convention without assuming that unit-test environment.
+    assert vc.RUNTIME_LOCK_FILE == vc.ROOT / "run" / "apply.lock"
+    assert server.LOCK == server.ROOT / "run" / "apply.lock"
 
 
 def test_bulk_delete_holds_routing_lock_during_wan_transition_and_commit(
