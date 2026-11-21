@@ -1,3 +1,4 @@
+import ast
 import importlib.util
 import hashlib
 import json
@@ -128,3 +129,91 @@ def test_shell_scripts_are_syntax_valid_and_do_not_deploy():
     assert '"$SERVICE" stop' in stop
     assert "iptables -F" not in stop
     assert "ip route flush" not in stop
+
+
+@pytest.mark.parametrize(
+    "mode,stale,expected",
+    [
+        ("vless", False, 1),
+        ("wan", True, 1),
+        ("wan", False, 0),
+        ("vpn", False, 0),
+    ],
+)
+def test_vless_stop_helper_in_isolated_shell(tmp_path, mode, stale, expected):
+    mode_file = tmp_path / "runtime-mode"
+    mode_file.write_text(mode + "\n")
+    running_file = tmp_path / "sing-box-running"
+    running_file.touch()
+    service_trace = tmp_path / "service-invoked"
+    helper = tmp_path / "stop-helper.sh"
+    script = VLESS_STOP.read_text()
+    script = script.replace(
+        "MODE_FILE=/etc/maxvpn/runtime-mode",
+        'MODE_FILE="' + str(mode_file) + '"',
+    )
+    script = script.replace(
+        "SERVICE=/etc/init.d/maxvpn-sing-box",
+        'SERVICE="' + str(tmp_path / "sing-box-service") + '"',
+    )
+    helper.write_text(script)
+    os.chmod(helper, 0o700)
+    service = tmp_path / "sing-box-service"
+    service.write_text(
+        '#!/bin/sh\n'
+        'touch "$SERVICE_TRACE"\n'
+        'rm -f "$RUNNING_FILE"\n'
+    )
+    os.chmod(service, 0o700)
+    fakebin = tmp_path / "mock-bin"
+    fakebin.mkdir()
+    mock_ip = fakebin / "ip"
+    mock_ip.write_text(
+        '#!/bin/sh\n'
+        'case "$*" in\n'
+        '  *"rule show"*)\n'
+        '    if [ "$STALE_RULE" = 1 ] || [ "$MOCK_MODE" = vpn ]; then\n'
+        '      echo "1000: from all iif br-lan lookup 100"\n'
+        '    fi ;;\n'
+        '  *"route show table 100"*)\n'
+        '    [ "$MOCK_MODE" = vpn ] && echo "default dev WireGuard"\n'
+        '    ;;\n'
+        'esac\n'
+        'exit 0\n'
+    )
+    mock_pidof = fakebin / "pidof"
+    mock_pidof.write_text(
+        '#!/bin/sh\n'
+        '[ -f "$RUNNING_FILE" ]\n'
+    )
+    mock_sleep = fakebin / "sleep"
+    mock_sleep.write_text('#!/bin/sh\nexit 0\n')
+    for mock in (mock_ip, mock_pidof, mock_sleep):
+        os.chmod(mock, 0o700)
+    env = dict(os.environ)
+    env.update({
+        "PATH": str(fakebin) + ":" + env.get("PATH", ""),
+        "MOCK_MODE": mode,
+        "STALE_RULE": "1" if stale else "0",
+        "RUNNING_FILE": str(running_file),
+        "SERVICE_TRACE": str(service_trace),
+    })
+    result = subprocess.run(
+        ["sh", str(helper)],
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=3,
+    )
+    assert (result.returncode == 0) == (expected == 0), result.stderr
+    if expected:
+        assert not service_trace.exists()
+        assert running_file.exists()
+    else:
+        assert service_trace.exists()
+        assert not running_file.exists()
+
+
+def test_snapshot_parser_targets_python39():
+    ast.parse(SNAPSHOT_SOURCE.read_text(), feature_version=(3, 9))
