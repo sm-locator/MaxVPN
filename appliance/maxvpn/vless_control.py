@@ -2766,6 +2766,15 @@ class VlessControl:
                 self._wan_fallback_runtime_failures = 0
                 runtime = self._runtime_info(store)
                 selection_mode = str(runtime.get("selection_mode") or "").lower()
+                if (
+                    selection_mode not in ("auto", "manual")
+                    and runtime.get("selected_outbound") is None
+                ):
+                    # The local API may be unreachable even while sing-box
+                    # is running. Use the saved selection scope so repeated
+                    # API errors can trigger recovery instead of returning
+                    # selection-unknown indefinitely.
+                    selection_mode = str(selection.get("mode") or "auto").lower()
 
                 if state.get("active"):
                     state["active"] = False
