@@ -27,7 +27,7 @@ if [ -x /usr/bin/flock ] && [ -d "${ROUTE_LOCK%/*}" ]; then
     watchdog_start_ticks="$(awk '{print $22}' "/proc/$/stat" 2>/dev/null || true)"
     case "$watchdog_start_ticks" in
         ''|*[!0-9]*) ;;
-        *) (umask 077; printf '%s %s\\n' "$" "$watchdog_start_ticks" > "$WATCHDOG_READY_FILE") || true ;;
+        *) (umask 077; printf '%s %s\n' "$" "$watchdog_start_ticks" > "$WATCHDOG_READY_FILE") || true ;;
     esac
 fi
 
