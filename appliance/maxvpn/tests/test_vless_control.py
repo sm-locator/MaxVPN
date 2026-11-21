@@ -1297,9 +1297,10 @@ def test_recovery_starts_sing_box_while_lan_stays_on_wan(tmp_path):
     assert len(profiles) == 2
 
 
-def test_explicit_stop_clears_wan_fallback_marker(tmp_path):
+def test_explicit_stop_clears_wan_fallback_marker(tmp_path, monkeypatch):
     from subprocess import CompletedProcess
 
+    monkeypatch.setattr(vless_control, "RUNTIME_LOCK_FILE", tmp_path / "apply.lock")
     controller, _runtime, _mode_calls, _profiles = _wan_fallback_controller(
         tmp_path, mode="wan", running=False
     )
@@ -1700,3 +1701,52 @@ def test_unexpected_running_selector_is_not_mistaken_for_api_outage(tmp_path):
     assert controller.monitor_wan_fallback()["action"] == "selection-unknown"
     assert runtime["mode"] == "vless"
     assert mode_calls == []
+
+
+def test_stop_rejects_vless_route_before_touching_service_or_fallback(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(vless_control, "RUNTIME_LOCK_FILE", tmp_path / "apply.lock")
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(
+        tmp_path, mode="vless", running=True
+    )
+    controller._save_wan_fallback_state(
+        {
+            "active": True,
+            "selection_mode": "auto",
+            "fallback_started_at": "2026-11-20T00:00:00Z",
+        }
+    )
+    invoked = []
+    controller._exec = lambda *a, **kw: invoked.append(a) or None
+    with pytest.raises(VlessControlError, match="Нельзя остановить sing-box"):
+        controller.stop()
+    assert invoked == []
+    assert runtime["mode"] == "vless"
+    assert mode_calls == []
+    assert controller._load_wan_fallback_state()["active"] is True
+
+
+def test_stop_failure_preserves_wan_fallback_marker(tmp_path, monkeypatch):
+    monkeypatch.setattr(vless_control, "RUNTIME_LOCK_FILE", tmp_path / "apply.lock")
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(
+        tmp_path, mode="wan", running=True
+    )
+    controller._save_wan_fallback_state(
+        {
+            "active": True,
+            "selection_mode": "manual",
+            "fallback_started_at": "2026-11-20T00:00:00Z",
+        }
+    )
+
+    def fail_exec(*args, **kwargs):
+        from subprocess import CompletedProcess
+        return CompletedProcess(args, 1, stdout="", stderr="aborted")
+
+    controller._exec = fail_exec
+    with pytest.raises(VlessControlError, match="Не удалось безопасно остановить"):
+        controller.stop()
+    assert runtime["mode"] == "wan"
+    assert mode_calls == []
+    assert controller._load_wan_fallback_state()["active"] is True
