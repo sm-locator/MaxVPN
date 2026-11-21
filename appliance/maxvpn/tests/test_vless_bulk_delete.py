@@ -16,6 +16,7 @@ def appliance(tmp_path, monkeypatch):
         "SERVICE",
         "MODE_FILE",
         "RUNTIME_LOCK_FILE",
+        "WATCHDOG_SCRIPT",
         "DELAY_HISTORY_FILE",
         "BACKUP_DIR",
     ):
@@ -382,3 +383,43 @@ def test_bulk_delete_holds_routing_lock_during_error_rollback(
     assert vc.MODE_FILE.read_text() == "vless"
     assert len(c._load_store()["profiles"]) == 2
     assert service == {"enabled": True, "running": True}
+
+
+def test_legacy_unlocked_watchdog_blocks_bulk_delete_before_route_mutation(
+    appliance, monkeypatch
+):
+    c, service, calls = appliance
+    vc.MODE_FILE.write_text("vless")
+    c.update_settings({"wan_fallback_enabled": True})
+    vc.WATCHDOG_SCRIPT.write_text(
+        "#!/bin/sh\\n# old watchdog without shared route lock\\n"
+    )
+    before = c.profile_file.read_bytes()
+    with pytest.raises(vc.VlessControlError, match="watchdog"):
+        c.delete_all_profiles(dict(confirmation(c), allow_wan=True))
+
+    assert c.profile_file.read_bytes() == before
+    assert vc.MODE_FILE.read_text() == "vless"
+    assert service == {"enabled": True, "running": True}
+    assert calls == []
+
+
+def test_reviewed_shared_lock_watchdog_permits_vless_delete(
+    appliance, monkeypatch
+):
+    c, service, calls = appliance
+    vc.MODE_FILE.write_text("vless")
+    c.update_settings({"wan_fallback_enabled": True})
+    script = (
+        Path(__file__).resolve().parents[1]
+        / "compat"
+        / "brume3-watchdog-locked.sh"
+    )
+    vc.WATCHDOG_SCRIPT.write_text(script.read_text(encoding="utf-8"))
+    switched = _emulate_vless_mode_switch(c, monkeypatch)
+
+    result = c.delete_all_profiles(dict(confirmation(c), allow_wan=True))
+    assert result == {"deleted": 2, "traffic_mode": "wan"}
+    assert switched == ["wan"]
+    assert service == {"enabled": False, "running": False}
+    assert c.get_state()["profiles"] == []
