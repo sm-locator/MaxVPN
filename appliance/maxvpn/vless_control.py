@@ -44,7 +44,7 @@ URLTEST_URL = "https://cp.cloudflare.com/generate_204"
 ALLOWED_INTERVALS = ("30s", "1m", "2m", "3m", "5m", "10m")
 WAN_FALLBACK_FAILURE_THRESHOLD = 2
 WAN_FALLBACK_RECOVERY_THRESHOLD = 2
-RUNTIME_LOCK_FILE = Path("/tmp/maxvpn-runtime.lock")
+RUNTIME_LOCK_FILE = ROOT / "run" / "apply.lock"
 LOCK = threading.RLock()
 
 
@@ -1565,6 +1565,15 @@ class VlessControl:
     def delete_all_profiles(self, data):
         if not isinstance(data, dict) or data.get("confirm") is not True:
             raise VlessControlError("Подтвердите удаление всех VLESS-серверов.")
+        # Match server.routing_lock(). The live shell helpers do not flock,
+        # so this lease must cover the *whole* route transition, commit and
+        # error rollback; it cannot be acquired only after set_mode('wan').
+        RUNTIME_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with RUNTIME_LOCK_FILE.open("a") as route_lock:
+            fcntl.flock(route_lock.fileno(), fcntl.LOCK_EX)
+            return self._delete_all_profiles_under_routing_lock(data)
+
+    def _delete_all_profiles_under_routing_lock(self, data):
         store = self._load_store()
         mode = self._read_mode()
         if (
@@ -1601,12 +1610,10 @@ class VlessControl:
                 self.set_mode("wan")
                 mode = "wan"
 
-            # Protect the committed removal against concurrent routing recovery.
-            with RUNTIME_LOCK_FILE.open("a") as route_lock:
-                fcntl.flock(route_lock, fcntl.LOCK_EX)
-                if self._read_mode() != mode:
-                    raise VlessControlError("Маршрут LAN изменился. Удаление отменено.")
-                self._clear_inactive_profiles(store, data["revision"])
+            # The shared routing lease was already acquired before set_mode().
+            if self._read_mode() != mode:
+                raise VlessControlError("Маршрут LAN изменился. Удаление отменено.")
+            self._clear_inactive_profiles(store, data["revision"])
         except Exception:
             if not was_vless:
                 raise
