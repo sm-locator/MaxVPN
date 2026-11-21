@@ -1700,7 +1700,7 @@ class VlessControl:
             values = stat.rsplit(")", 1)[1].split()
             if len(values) <= 19 or values[19] != start:
                 return False
-            args = (PROC_ROOT / pid / "cmdline").read_bytes().split(b"\\0")
+            args = (PROC_ROOT / pid / "cmdline").read_bytes().split(b"\0")
             return b"/usr/bin/maxvpn-vless-watchdog" in args
         except (OSError, UnicodeError, ValueError, IndexError):
             return False
