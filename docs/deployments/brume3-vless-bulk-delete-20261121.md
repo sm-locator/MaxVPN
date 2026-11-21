@@ -58,3 +58,26 @@ Compare before/after for:
 - Controlled negative tests (only in isolated environment): bulk delete rollback, watchdog racing against route switch, API timeout and explicit WAN-fallback policy.
 
 **Do not test bulk deletion on the production router.** With WAN fallback enabled, successful deletion from VLESS is explicitly allowed to move LAN straight to WAN and remove every VPN profile.
+
+
+## Gated pre-deployment package (no live install yet)
+
+The companion scripts in scripts/brume3_pr6/ have been prepared for
+read-only baseline verification, private local code capture, on-router
+secret-safe backup, checksum verification and receipt-gated rollback.
+Use their README for WSL2 commands. The controller *does not implement*
+a deploy action, and its restore action refuses to modify live files
+without an approved deployment receipt produced by a future
+device-specific installer.
+
+A guarded stop-helper candidate now exists at
+appliance/maxvpn/compat/brume3-vless-stop-guarded.sh; it refuses to
+stop sing-box while LAN is still in VLESS mode. The VlessControl.stop()
+entry point is protected by the same routing flock and only clears
+fallback state after a confirmed stop. The candidate is not yet
+installed at /usr/bin/vpn-lan-vless-stop.
+
+In addition to the encrypted SSH transport, snapshots remain private
+on-device and are never published to GitHub; the private three-way
+merge must use locally captured code without sending VLESS JSON
+credentials or provider subscriptions outside the operator's machine.
