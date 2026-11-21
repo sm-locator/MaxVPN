@@ -1548,7 +1548,7 @@ def test_clash_response_separates_invalid_sample_from_confirmed_failure(
 ):
     controller, _, _, profiles = _wan_fallback_controller(tmp_path)
     controller._exec = lambda *_a, **_kw: SimpleNamespace(
-        returncode=0, stdout=body + "\\n" + http_status, stderr=""
+        returncode=0, stdout=body + "\n" + http_status, stderr=""
     )
 
     result = controller._probe_profiles(profiles[:1])[0]
