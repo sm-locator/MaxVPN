@@ -2015,31 +2015,49 @@ class VlessControl:
             return self._runtime_info(self._load_store())
 
     def stop(self):
+        # The watchdog and bulk-delete worker use the same flock, so a stop
+        # cannot race their service-repair or WAN transition paths.
         with LOCK:
-            fallback_state = self._load_wan_fallback_state()
-            fallback_state["active"] = False
-            fallback_state["selection_mode"] = None
-            fallback_state["fallback_started_at"] = None
-            fallback_state["profile_counters"] = {}
-            fallback_state["probe_scope"] = None
-            fallback_state["runtime_consecutive_failures"] = 0
-            self._reset_wan_fallback_monitor_state()
-            self._save_wan_fallback_state(fallback_state)
-            try:
-                self._checked(
-                    [VLESS_STOP_HELPER],
-                    "Не удалось безопасно остановить sing-box",
-                    timeout=40,
-                )
-            except FileNotFoundError as exc:
-                raise VlessControlError(
-                    "Обновите скрипты маршрутизации MaxVPN перед остановкой sing-box."
-                ) from exc
-            if self._running():
-                raise VlessControlError(
-                    "sing-box продолжает работать после команды остановки."
-                )
-            return self._runtime_info(self._load_store())
+            RUNTIME_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with RUNTIME_LOCK_FILE.open("a") as route_lock:
+                fcntl.flock(route_lock.fileno(), fcntl.LOCK_EX)
+                mode = self._read_mode()
+                if mode == "vless":
+                    raise VlessControlError(
+                        "Нельзя остановить sing-box при маршрутизации LAN через VLESS. "
+                        "Сначала выберите защищённый VPN или явно разрешённый WAN."
+                    )
+                if mode not in ("vpn", "wan"):
+                    raise VlessControlError(
+                        "Не удалось подтвердить защищённый маршрут перед остановкой sing-box."
+                    )
+                try:
+                    self._checked(
+                        [VLESS_STOP_HELPER],
+                        "Не удалось безопасно остановить sing-box",
+                        timeout=40,
+                    )
+                except FileNotFoundError as exc:
+                    raise VlessControlError(
+                        "Отсутствует скрипт безопасной остановки sing-box."
+                    ) from exc
+                if self._running():
+                    raise VlessControlError(
+                        "sing-box продолжает работать после команды остановки."
+                    )
+
+                # Do not clear the recovery marker unless the stop succeeds:
+                # an aborted stop must not silently change fallback policy.
+                fallback_state = self._load_wan_fallback_state()
+                fallback_state["active"] = False
+                fallback_state["selection_mode"] = None
+                fallback_state["fallback_started_at"] = None
+                fallback_state["profile_counters"] = {}
+                fallback_state["probe_scope"] = None
+                fallback_state["runtime_consecutive_failures"] = 0
+                self._reset_wan_fallback_monitor_state()
+                self._save_wan_fallback_state(fallback_state)
+                return self._runtime_info(self._load_store())
 
     @_serialized
     def select_outbound(self, profile_id=None):
