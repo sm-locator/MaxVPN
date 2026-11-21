@@ -18,6 +18,18 @@ policy_repair_cooldown=0
 # Based on the installed GL-MT5000 watchdog inspected 2026-11-21.
 # Only mutation calls acquire the shared Smart Routing lock; never sleep with it.
 ROUTE_LOCK=${MAXVPN_APPLIANCE_ROUTE_LOCK:-/opt/maxvpn-appliance/run/apply.lock}
+WATCHDOG_READY_FILE=${MAXVPN_WATCHDOG_READY_FILE:-/opt/maxvpn-appliance/run/watchdog-shared-lock-v1.status}
+
+# A file replacement does not replace the shell already running under procd.
+# Publish the PID and kernel start ticks of *this* lock-aware watchdog. The API
+# requires them to match /proc before allowing destructive operations.
+if [ -x /usr/bin/flock ] && [ -d "${ROUTE_LOCK%/*}" ]; then
+    watchdog_start_ticks="$(awk '{print $22}' "/proc/$/stat" 2>/dev/null || true)"
+    case "$watchdog_start_ticks" in
+        ''|*[!0-9]*) ;;
+        *) (umask 077; printf '%s %s\\n' "$" "$watchdog_start_ticks" > "$WATCHDOG_READY_FILE") || true ;;
+    esac
+fi
 
 with_routing_lock() (
     [ -x /usr/bin/flock ] || return 1
