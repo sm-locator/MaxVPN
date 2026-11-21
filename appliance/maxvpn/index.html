@@ -754,12 +754,13 @@
       <div><h2>Список серверов</h2><p class="muted">По умолчанию показан только действующий сервер. Остальные профили доступны по раскрытию списка.</p></div>
       <div class="actions">
         <button id="vlessProfilesToggle" class="btn ghost" aria-expanded="false" aria-controls="vlessProfilesDisclosure" onclick="toggleVlessProfilesList()">Показать все серверы</button>
+        <button type="button" id="vlessDeleteAll" class="btn danger" onclick="deleteAllVless()" disabled>Удалить все VLESS-серверы</button>
         <button id="vlessDelayButton" class="btn ghost" onclick="testVlessDelays()">Проверить задержки</button>
       </div>
     </div>
     <div id="vlessProfilesDisclosure" style="display:none">
       <div class="vless-profile-tools">
-        <p class="muted">История доступности серверов и счётчик неудачных проверок относятся только к проверкам, запущенным на BRUME 3. Они не объединяются с историей localhost:8080. «Первый отказ» — время первой неудачной проверки этого контура, а не подтверждённое время начала сбоя сервера.</p>
+        <p class="muted">BRUME 3 учитывает ручные проверки и URLTest sing-box. Простой отсчитывается с первого подтверждённого отказа после последнего успеха. Пустой замер пропускается.</p>
         <input id="vlessSearch" class="input" placeholder="Поиск по имени, адресу или SNI" oninput="renderVlessProfiles()">
         <select id="vlessFilter" class="select" onchange="renderVlessProfiles()"><option value="all">Все серверы</option><option value="enabled">Включённые</option><option value="reachable">Отвечают</option><option value="failed">Нет ответа</option><option value="stale">Проверка устарела</option><option value="disabled">Отключённые</option></select>
       </div>
@@ -1339,7 +1340,7 @@ const RUSSIA_DIRECT_DOMAINS = new Set([
   "cdek.ru",
 ]);
 
-const state={status:null,routing:null,vless:null,vlessDelays:{},vlessDelayHistory:{},vlessSelectionHistory:null,vlessSelectionHistoryError:null,vlessHistoryExpanded:false,vlessHistoryVisibleCount:5,vlessProfilesExpanded:false,vlessBusy:false,vlessError:null,dirty:false,diagnostic:null,diagnosticTimer:null,smartImportFile:null,smartImportPreview:null,smartImportContent:''};
+const state={status:null,routing:null,vless:null,vlessSelectionHistory:null,vlessSelectionHistoryError:null,vlessHistoryExpanded:false,vlessHistoryVisibleCount:5,vlessProfilesExpanded:false,vlessBusy:false,vlessError:null,dirty:false,diagnostic:null,diagnosticTimer:null,smartImportFile:null,smartImportPreview:null,smartImportContent:''};
 const $=id=>document.getElementById(id);
 async function api(path,opts={}){const r=await fetch(path,{cache:'no-store',headers:{'Content-Type':'application/json',...(opts.headers||{})},...opts});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||`HTTP ${r.status}`);return data;}
 function row(k,v){return `<div class="row"><span>${k}</span><b>${v??'—'}</b></div>`}
@@ -1360,13 +1361,6 @@ async function refreshAll(){
   }
 
   if(state.vless){
-    try{
-      const history=await api('/api/appliance/v1/vless/delays/history');
-      applyVlessDelayHistory(history.results||[],true);
-    }catch(e){
-      console.warn('VLESS delay history unavailable',e);
-    }
-
     try{
       state.vlessSelectionHistory=await api('/api/appliance/v1/vless/selection-history');
       state.vlessSelectionHistoryError=null;
@@ -3450,14 +3444,6 @@ function vlessMeasurementAgeSeconds(value){
   if(!value)return null;const stamp=Date.parse(value);if(!Number.isFinite(stamp))return null;
   return Math.max(0,Math.floor((Date.now()-stamp)/1000));
 }
-function vlessManualMeasurementFreshness(value,interval){
-  const age=vlessMeasurementAgeSeconds(value),limit=vlessIntervalSeconds(interval);
-  if(age===null)return 'возраст неизвестен';
-  const text=`возраст ${formatVlessDuration(age)}`;
-  if(limit!==null&&age>limit)return `${text} · УСТАРЕЛО: старше интервала URLTest (${interval}); сохранённая ручная проверка не является текущим измерением URLTest`;
-  if(limit!==null)return `${text} · сохранённый результат ручной проверки; не является измерением URLTest`;
-  return `${text} · порог свежести неизвестен; не является измерением URLTest`;
-}
 function vlessCurrentUrltestMeasurement(current){
   if(!current)return 'URLTest (sing-box): нет снимка состояния';
   const delay=current.active_delay_ms==null?'нет измерения':`${Number(current.active_delay_ms)} мс`;
@@ -3472,221 +3458,30 @@ function vlessCurrentUrltestMeasurement(current){
 function selectionAgeLabel(seconds){return seconds==null||!Number.isFinite(Number(seconds))?'неизвестен':formatVlessDuration(Number(seconds))}
 function selectionFreshnessLabel(value){return ({fresh:'оба измерения свежие',stale:'есть устаревшее измерение',incomplete:'недостаточно данных'})[value]||'свежесть неизвестна'}
 function selectionDiagnosticLabel(value){return ({consistent_with_latest_delays:'Согласуется с последними измерениями',not_explained_by_latest_delays:'Не объясняется последними измерениями',stale_measurements:'Измерения устарели',insufficient_data:'Недостаточно данных',insufficient_configuration:'Не хватает параметров URLTest',observation_gap:'Перерыв в наблюдениях',selection_mode_changed:'Изменился режим выбора',manual_selection:'Ручной выбор'})[value]||'Диагностика не сохранена'}
-function applyVlessDelayHistory(results,replace=false){
-  const incoming=Object.fromEntries((results||[]).map(item=>[item.profile_id,item]));
-  state.vlessDelayHistory=replace?incoming:{...(state.vlessDelayHistory||{}),...incoming};
-  state.vlessDelays=Object.fromEntries(Object.entries(state.vlessDelayHistory).map(([id,item])=>[id,item?.delay_ms??null]));
-}
-function vlessDelay(id){
-  const item=state.vlessDelayHistory?.[id];
-  if(!item||!item.last_checked_at)return 'Не проверено';
-  if(item.reachable&&typeof item.delay_ms==='number')return `${item.delay_ms} мс`;
-  if(item.first_failed_at){const start=Date.parse(item.first_failed_at);const seconds=Number.isFinite(start)?Math.max(0,Math.floor((Date.now()-start)/1000)):(item.unavailable_seconds||0);return `Нет ответа · ${formatVlessDuration(seconds)}`}
-  return 'Нет ответа';
-}
-function vlessDelayDetails(id){
-  const item=state.vlessDelayHistory?.[id];if(!item||!item.last_checked_at)return 'Ручная проверка на BRUME 3: ещё не выполнялась';
-  const interval=state.vlessSelectionHistory?.current?.urltest_interval||state.vless?.settings?.urltest_interval||null;
-  const parts=[`Ручная проверка на BRUME 3: ${formatVlessTimestamp(item.last_checked_at)}`,vlessManualMeasurementFreshness(item.last_checked_at,interval)];
-  if(item.first_failed_at){parts.push(`Недоступен с: ${formatVlessTimestamp(item.first_failed_at)}`);parts.push(`Неудач подряд: ${item.consecutive_failures||0}`);if(item.last_success_at)parts.push(`Последний успех: ${formatVlessTimestamp(item.last_success_at)}`)}
-  else if(item.last_recovered_at){parts.push(`Восстановлен: ${formatVlessTimestamp(item.last_recovered_at)}`);if(item.last_outage_duration_seconds!==null&&item.last_outage_duration_seconds!==undefined)parts.push(`Последний простой: ${formatVlessDuration(item.last_outage_duration_seconds)}`)}
-  else if(item.last_success_at)parts.push(`Последний успех: ${formatVlessTimestamp(item.last_success_at)}`);
-  return parts.join(' · ');
-}
-function vlessUrltestSampleState(profile){
-  const sample=state.vlessSelectionHistory?.current?.profile_delays?.[`vless-profile-${profile.id}`]||null;
-  const manualSample=state.vlessDelayHistory?.[profile.id]||null;
-  const sampleEpoch=Date.parse(sample?.observed_at||'');
-  const manualEpoch=Date.parse(manualSample?.last_checked_at||'');
-  const sampleIsManual=manualSample?.reachable===true&&typeof sample?.delay_ms==='number'&&typeof manualSample?.delay_ms==='number'&&sample.delay_ms===manualSample.delay_ms&&Number.isFinite(sampleEpoch)&&Number.isFinite(manualEpoch)&&Math.abs(sampleEpoch-manualEpoch)<=12000;
-  return {sample,manualSample,sampleIsManual};
-}
-function vlessUrltestStatusMeasurement(sample,interval){
-  if(!sample||typeof sample.delay_ms!=='number'||!Number.isFinite(sample.delay_ms)||sample.delay_ms<=0||!sample.observed_at)return null;
-  const delay=Math.round(sample.delay_ms);
-  const age=vlessMeasurementAgeSeconds(sample.observed_at);
-  const limit=vlessIntervalSeconds(interval);
-  const stale=age===null||limit===null||age>limit;
-  const ageLabel=age===null?'возраст неизвестен':`${formatVlessDuration(age)} назад`;
-  const measured=`Измерено ${formatVlessTimestamp(sample.observed_at)}`;
-  if(stale){
-    return {
-      source:'urltest-stale',
-      delay_ms:null,
-      display:`Последний URLTest: ${delay} мс · устарел (${ageLabel})`,
-      details:`${measured} · ${ageLabel} · последний успешный результат старше допустимого интервала ${interval||'неизвестен'}; он не подтверждает текущую доступность сервера`
-    };
-  }
-  return {
-    source:'urltest',
-    delay_ms:delay,
-    display:`URLTest (sing-box): ${delay} мс`,
-    details:`${measured} · возраст ${formatVlessDuration(age)} · в пределах интервала ${interval}`
-  };
-}
-function vlessManualStatusMeasurement(manualSample,interval){
-  if(!manualSample?.last_checked_at)return null;
-  const checkedAt=manualSample.last_checked_at;
-  const age=vlessMeasurementAgeSeconds(checkedAt);
-  const limit=vlessIntervalSeconds(interval);
-  const stale=age===null||limit===null||age>limit;
-  const ageLabel=age===null?'возраст неизвестен':`${formatVlessDuration(age)} назад`;
-  const checkedLabel=`Последняя ручная проверка BRUME 3: ${formatVlessTimestamp(checkedAt)}`;
-  const lastSuccess=manualSample.last_success_at
-    ?`Последний успешный результат ручной проверки: ${formatVlessTimestamp(manualSample.last_success_at)}`
-    :'Последний успешный результат ручной проверки не сохранён';
-  if(manualSample.reachable===false&&manualSample.first_failed_at){
-    const failedAt=manualSample.first_failed_at;
-    const unavailable=vlessMeasurementAgeSeconds(failedAt)??manualSample.unavailable_seconds??0;
-    const failures=Math.max(1,Number(manualSample.consecutive_failures)||1);
-    const details=`Первая неудачная ручная проверка BRUME 3: ${formatVlessTimestamp(failedAt)} · неудачных проверок подряд: ${failures} · ${checkedLabel} · возраст последней проверки: ${ageLabel} · ${lastSuccess} · отсчёт начинается с обнаружения отказа, а не с доказанного начала сетевого сбоя`;
-    if(stale){
-      return {
-        source:'manual-outage-stale',
-        delay_ms:null,
-        display:`Результат ручной проверки устарел · ${ageLabel}`,
-        details:`${details} · текущая доступность неизвестна: результат старше допустимого интервала ${interval||'неизвестен'}`
-      };
-    }
-    return {
-      source:'manual-outage',
-      delay_ms:null,
-      display:`Нет ответа по ручной проверке · ${formatVlessDuration(unavailable)}`,
-      details
-    };
-  }
-  if(manualSample.reachable===true&&typeof manualSample.delay_ms==='number'&&Number.isFinite(manualSample.delay_ms)){
-    const delay=Math.round(manualSample.delay_ms);
-    if(stale){
-      return {
-        source:'manual-stale',
-        delay_ms:null,
-        display:`Старая ручная проверка · ${ageLabel}`,
-        details:`${checkedLabel} · ${lastSuccess} · сохранённый результат ${delay} мс не подтверждает текущую доступность сервера`
-      };
-    }
-    return {
-      source:'manual',
-      delay_ms:delay,
-      display:`Ручная проверка: ${delay} мс`,
-      details:vlessDelayDetails(manualSample.profile_id)
-    };
-  }
-  return null;
-}
 function vlessProfileMeasurement(profile){
-  const {sample,manualSample,sampleIsManual}=vlessUrltestSampleState(profile);
-  const interval=state.vlessSelectionHistory?.current?.urltest_interval||state.vless?.settings?.urltest_interval||null;
-  const availability=state.vlessSelectionHistory?.profile_availability?.[String(profile.id)]||null;
-  const urltestObservation=sampleIsManual?null:vlessUrltestStatusMeasurement(sample,interval);
-  const manualObservation=vlessManualStatusMeasurement(manualSample,interval);
-  const urltestObservedAt=Date.parse(sample?.observed_at||'');
-  const manualObservedAt=Date.parse(manualSample?.last_checked_at||'');
-  const hasUrltestTime=Number.isFinite(urltestObservedAt);
-  const hasManualTime=Number.isFinite(manualObservedAt);
-  // A result recorded after the persisted URLTest-missing marker supersedes that old outage state.
-  const hasPersistedMissing=availability?.status==='no_result'&&!!availability.first_missing_at;
-  if(hasPersistedMissing){
-    const missingObservedAt=Date.parse(availability.first_missing_at);
-    if(Number.isFinite(missingObservedAt)){
-      const urltestAfterMissing=!!urltestObservation&&hasUrltestTime&&urltestObservedAt>missingObservedAt;
-      const manualAfterMissing=!!manualObservation&&hasManualTime&&manualObservedAt>missingObservedAt;
-      if(urltestAfterMissing||manualAfterMissing){
-        if(manualAfterMissing&&(!urltestAfterMissing||manualObservedAt>urltestObservedAt||sampleIsManual))return manualObservation;
-        if(urltestAfterMissing)return urltestObservation;
-      }
-    }
-  }else{
-    // Without an active persisted no-result marker, display whichever independent observation is newer.
-    if(manualObservation&&(sampleIsManual||!hasUrltestTime||(hasManualTime&&manualObservedAt>urltestObservedAt)))return manualObservation;
-    if(urltestObservation&&(!hasManualTime||urltestObservedAt>=manualObservedAt))return urltestObservation;
+  const item=state.vlessSelectionHistory?.profile_availability?.[String(profile.id)];
+  if(!item?.last_checked_at)return {source:null,delay_ms:null,display:'Нет измерений',details:'BRUME 3 ещё не получил результат проверки.'};
+  const source=item.source==='manual'?'Ручная проверка BRUME 3':'URLTest · sing-box';
+  const interval=state.vlessSelectionHistory?.current?.urltest_interval||state.vless?.settings?.urltest_interval;
+  const limit=vlessIntervalSeconds(interval);
+  const age=vlessMeasurementAgeSeconds(item.last_checked_at);
+  const stale=age===null||limit===null||age>limit;
+  const details=[source+' · '+formatVlessTimestamp(item.last_checked_at)];
+  if(stale)details.push('Последняя проверка устарела');
+  if(item.first_failed_at){
+    const seconds=vlessMeasurementAgeSeconds(item.first_failed_at)??item.unavailable_seconds??0;
+    details.push('Первый отказ '+formatVlessTimestamp(item.first_failed_at));
+    if(item.last_success_at)details.push('Последний успех '+formatVlessTimestamp(item.last_success_at));
+    return {source:item.source,failed:true,stale,delay_ms:null,
+      display:'Нет ответа · '+formatVlessDuration(seconds)+' · '+source+(stale?' · проверка устарела':''),
+      details:details.join(' · ')};
   }
-  if(availability?.status==='no_result'&&availability.first_missing_at){
-    const seconds=vlessMeasurementAgeSeconds(availability.first_missing_at)??availability.unavailable_seconds??0;
-    const lastSuccess=availability.last_success_at?`Последний успешный замер: ${formatVlessTimestamp(availability.last_success_at)}${availability.last_success_delay_ms==null?'':` · ${Number(availability.last_success_delay_ms)} мс`}`:'Успешное измерение ранее не сохранено';
-    return {source:'urltest-monitor',delay_ms:null,display:`Нет успешного измерения · ${formatVlessDuration(seconds)}`,details:`Первое наблюдение без успешной записи sing-box: ${formatVlessTimestamp(availability.first_missing_at)} · ${lastSuccess} · это время обнаружения отсутствия результата, а не точное время начала сетевого сбоя`};
-  }
-  if(availability?.status==='unknown'&&availability.reason==='history_reset'){
-    const lastSuccess=availability.last_success_at?`Последний успешный замер: ${formatVlessTimestamp(availability.last_success_at)}${availability.last_success_delay_ms==null?'':` · ${Number(availability.last_success_delay_ms)} мс`}`:'Нет сохранённого успешного замера';
-    return {source:'urltest-monitor',delay_ms:null,display:'Нет подтверждённых данных URLTest',details:`История sing-box могла быть сброшена или перезапущена; общий сброс нельзя надёжно отличить от одновременного отказа всех узлов. ${lastSuccess}`};
-  }
-  // A manual failure is a separate, timestamped availability observation.
-  // Use it only when URLTest has no successful history for this profile;
-  // a newer successful URLTest sample must take precedence.
-  if(
-    availability?.status==='unknown'&&
-    availability?.reason==='no_successful_history'&&
-    manualSample?.reachable===false&&
-    manualSample?.first_failed_at
-  ){
-    const failedAt=manualSample.first_failed_at;
-    const failedEpoch=Date.parse(failedAt);
-    const sampleEpoch=Date.parse(sample?.observed_at||'');
-    const hasNewerSuccessfulUrltest=
-      typeof sample?.delay_ms==='number'&&
-      Number.isFinite(sample.delay_ms)&&
-      sample.delay_ms>0&&
-      Number.isFinite(sampleEpoch)&&
-      Number.isFinite(failedEpoch)&&
-      sampleEpoch>failedEpoch;
-    if(!hasNewerSuccessfulUrltest){
-      const seconds=vlessMeasurementAgeSeconds(failedAt)??manualSample.unavailable_seconds??0;
-      const failures=Math.max(1,Number(manualSample.consecutive_failures)||1);
-      const lastChecked=manualSample.last_checked_at
-        ?`Последняя ручная проверка: ${formatVlessTimestamp(manualSample.last_checked_at)}`
-        :'Время последней ручной проверки неизвестно';
-      const lastSuccess=manualSample.last_success_at
-        ?`Последний успешный результат ручной проверки: ${formatVlessTimestamp(manualSample.last_success_at)}`
-        :'Последний успешный результат ручной проверки не сохранён';
-      return {
-        source:'manual-outage',
-        delay_ms:null,
-        display:`Нет ответа по ручной проверке · ${formatVlessDuration(seconds)}`,
-        details:`Первая неудачная ручная проверка BRUME 3: ${formatVlessTimestamp(failedAt)} · неудачных проверок подряд: ${failures} · ${lastChecked} · ${lastSuccess} · отсчёт начинается с обнаружения отказа, а не с доказанного начала сетевого сбоя`
-      };
-    }
-  }
-  if((!sample||sampleIsManual)&&manualSample?.last_checked_at){
-    const age=vlessMeasurementAgeSeconds(manualSample.last_checked_at);
-    const limit=vlessIntervalSeconds(interval);
-    const previous=manualSample.reachable===true&&typeof manualSample.delay_ms==='number'?`${Math.round(manualSample.delay_ms)} мс`:'нет ответа';
-    if(age!==null&&limit!==null&&age<=limit){
-      const delay=manualSample.reachable===true&&typeof manualSample.delay_ms==='number'&&Number.isFinite(manualSample.delay_ms)?Math.round(manualSample.delay_ms):null;
-      return {source:'manual',delay_ms:delay,display:`Ручная проверка: ${vlessDelay(profile.id)}`,details:vlessDelayDetails(profile.id)};
-    }
-    const ageLabel=age===null?'возраст неизвестен':`${formatVlessDuration(age)} назад`;
-    return {source:'manual-stale',delay_ms:null,display:`Старая ручная проверка · ${ageLabel}`,details:`Последняя ручная проверка BRUME 3: ${previous} · ${formatVlessTimestamp(manualSample.last_checked_at)} · не подтверждает текущее состояние сервера`};
-  }
-  if(sample&&!sampleIsManual){
-    const delay=typeof sample.delay_ms==='number'&&Number.isFinite(sample.delay_ms)&&sample.delay_ms>0?Math.round(sample.delay_ms):null;
-    // If sing-box has no numeric URLTest result, use the persisted BRUME 3
-    // availability check. A successful URLTest measurement always wins.
-    const manualHistoryNote=delay===null&&manualSample?.last_checked_at?` · последняя ручная проверка ${formatVlessTimestamp(manualSample.last_checked_at)} не подтверждает текущую доступность`:'';
-    const measuredAt=sample.observed_at||null;
-    const age=measuredAt?vlessMeasurementAgeSeconds(measuredAt):null;
-    const limit=vlessIntervalSeconds(interval);
-    let details='URLTest · sing-box: время измерения неизвестно · свежесть неизвестна';
-    if(measuredAt){
-      const timeLabel=`Измерено ${formatVlessTimestamp(measuredAt)}`;
-      if(age===null)details=`${timeLabel} · возраст неизвестен`;
-      else if(limit!==null&&age>limit)details=`${timeLabel} · возраст ${formatVlessDuration(age)} · УСТАРЕЛО: старше интервала URLTest (${interval})`;
-      else if(limit!==null)details=`${timeLabel} · возраст ${formatVlessDuration(age)} · актуально`;
-      else details=`${timeLabel} · возраст ${formatVlessDuration(age)} · свежесть неизвестна`;
-    }
-    details+=manualHistoryNote;
-    if(delay===null){
-      details+=' · нет числовой задержки';
-      if(!manualSample?.last_checked_at){
-        details+=' · учёт простоя на BRUME 3 начнётся после нажатия «Проверить задержки»';
-      }
-    }
-    return {source:'urltest',delay_ms:delay,display:delay===null?'URLTest · sing-box: нет измерения':`URLTest · sing-box: ${delay} мс`,details};
-  }
-  if(manualSample?.last_checked_at){
-    const delay=manualSample.reachable===true&&typeof manualSample.delay_ms==='number'&&Number.isFinite(manualSample.delay_ms)?Math.round(manualSample.delay_ms):null;
-    return {source:'manual',delay_ms:delay,display:`Ручная проверка: ${vlessDelay(profile.id)}`,details:vlessDelayDetails(profile.id)};
-  }
-  return {source:null,delay_ms:null,display:'Нет измерений',details:sampleIsManual?'Недавний результат ручной проверки исключён из URLTest; ожидается следующий автоматический замер':'Нет измерения в снимке API sing-box'};
+  if(item.last_recovered_at)details.push('Восстановлен '+formatVlessTimestamp(item.last_recovered_at)+
+    ' · последний простой '+formatVlessDuration(item.last_outage_duration_seconds));
+  const delay=item.delay_ms;
+  const label=typeof delay==='number'?delay+' мс':'есть ответ';
+  return {source:item.source,stale,delay_ms:stale?null:delay,
+    display:source+' · '+label+(stale?' · проверка устарела':''),details:details.join(' · ')};
 }
 function renderVlessActiveMeasurement(){
   const v=state.vless||{};
@@ -3720,6 +3515,7 @@ function renderVless(){
   const profilesToggle=$('vlessProfilesToggle');if(profilesToggle){profilesToggle.setAttribute('aria-expanded',state.vlessProfilesExpanded?'true':'false');profilesToggle.textContent=state.vlessProfilesExpanded?'Скрыть список серверов':`Показать все серверы (${(v.profiles||[]).length})`;}const profilesDisclosure=$('vlessProfilesDisclosure');if(profilesDisclosure)profilesDisclosure.style.display=state.vlessProfilesExpanded?'':'none';
   document.querySelectorAll('[data-mode]').forEach(button=>{button.classList.toggle('active',button.dataset.mode===mode);button.setAttribute('aria-pressed',button.dataset.mode===mode?'true':'false');button.disabled=!!state.vlessBusy||button.dataset.mode===mode});
   const busyIds=['vlessImportButton','vlessDelayButton','vlessAutoBannerButton','vlessSettingsButton','vlessPrepareButton','vlessApplyButton','vlessStopButton'];busyIds.forEach(id=>{const button=$(id);if(button)button.disabled=!!state.vlessBusy});
+  $('vlessDeleteAll').disabled=!!state.vlessBusy||!profiles.length||!v.delete_revision;
   if($('vlessDelayButton'))$('vlessDelayButton').disabled=!!state.vlessBusy||!v.running;
   if($('vlessAutoBannerButton')){const autoButton=$('vlessAutoBannerButton');autoButton.disabled=!!state.vlessBusy||!v.running||desiredMode==='auto';autoButton.textContent=desiredMode==='auto'?(selectionPending?'Автовыбор ожидает применения':v.selection_mode==='auto'?'Автовыбор активен':'Автовыбор не подтверждён'):'Выбрать автовыбор';autoButton.style.display=desiredMode==='auto'&&!selectionPending&&v.selection_mode==='auto'?'none':'';}
   if($('vlessStopButton'))$('vlessStopButton').disabled=!!state.vlessBusy||!v.running;
@@ -3747,11 +3543,11 @@ function renderVless(){
 function renderVlessProfiles(){
   const v=state.vless||{};const desiredMode=v.desired_selection_mode||v.selection_mode||'unknown';const desiredProfileId=v.desired_profile_id==null?null:Number(v.desired_profile_id);const selectionPending=v.selection_pending===true;let profiles=(v.profiles||[]).slice();const q=($('vlessSearch')?.value||'').trim().toLowerCase();const filter=$('vlessFilter')?.value||'all';
   profiles.sort((a,b)=>{const da=vlessProfileMeasurement(a).delay_ms,db=vlessProfileMeasurement(b).delay_ms;const aMeasured=typeof da==='number',bMeasured=typeof db==='number';if(aMeasured&&bMeasured)return da-db||Number(a.id)-Number(b.id);if(aMeasured)return -1;if(bMeasured)return 1;return Number(a.id)-Number(b.id)});
-  profiles=profiles.filter(p=>{const searchable=[p.name,p.address,p.server_name,p.fingerprint].join(' ').toLowerCase();if(q&&!searchable.includes(q))return false;const measurement=vlessProfileMeasurement(p);if(filter==='enabled'&&!p.enabled)return false;if(filter==='disabled'&&p.enabled)return false;if(filter==='reachable'&&typeof measurement.delay_ms!=='number')return false;if(filter==='failed'&&measurement.source!=='manual-outage')return false;if(filter==='stale'&&!['manual-outage-stale','manual-stale','urltest-stale'].includes(measurement.source))return false;return true});
-  $('vlessProfileCount').textContent=`Показано ${profiles.length} из ${(v.profiles||[]).length}. Сортировка использует URLTest · sing-box; ручная проверка — резервный результат, когда отдельного замера URLTest нет.`;
+  profiles=profiles.filter(p=>{const searchable=[p.name,p.address,p.server_name,p.fingerprint].join(' ').toLowerCase();if(q&&!searchable.includes(q))return false;const measurement=vlessProfileMeasurement(p);if(filter==='enabled'&&!p.enabled)return false;if(filter==='disabled'&&p.enabled)return false;if(filter==='reachable'&&typeof measurement.delay_ms!=='number')return false;if(filter==='failed'&&!measurement.failed)return false;if(filter==='stale'&&!measurement.stale)return false;return true});
+  $('vlessProfileCount').textContent=`Показано ${profiles.length} из ${(v.profiles||[]).length}. Сортировка по задержке последней актуальной проверки BRUME 3 или URLTest.`;
   if(!profiles.length){$('vlessProfilesBody').innerHTML='<tr><td colspan="6">Серверы не найдены. Импортируйте ссылки VLESS или проверьте фильтр.</td></tr>';return}
   const active=String(v.active_outbound||'');
-  $('vlessProfilesBody').innerHTML=profiles.map((p,i)=>{const measurement=vlessProfileMeasurement(p);const latency=state.vlessDelays?.[p.id];const availability=state.vlessSelectionHistory?.profile_availability?.[String(p.id)];const staleMeasurement=['manual-outage-stale','manual-stale','urltest-stale'].includes(measurement.source);const badge=!p.enabled?'<span class="vless-badge off">Отключён</span>':measurement.source==='manual-outage'?'<span class="vless-badge bad">Нет ответа по ручной проверке</span>':staleMeasurement?'<span class="vless-badge off">Проверка устарела</span>':availability?.status==='unknown'&&availability?.reason==='history_reset'&&measurement.source!=='urltest'?'<span class="vless-badge off">Нет данных URLTest</span>':measurement.source==='urltest-monitor'?'<span class="vless-badge bad">Нет успешного замера</span>':typeof measurement.delay_ms==='number'?'<span class="vless-badge">Есть измерение</span>':'<span class="vless-badge off">Нет актуального замера</span>';const isActive=active===`vless-profile-${p.id}`;const isDesired=desiredMode==='manual'&&desiredProfileId===p.id;const pendingBadge=isDesired&&selectionPending?'<span class="vless-badge pending">Будет выбран после применения</span> ':'';const params=[p.security==='reality'?'REALITY':'TLS/без TLS',p.flow||'без flow',p.server_name?'SNI: '+p.server_name:''].filter(Boolean).join(' · ');const country=vlessCountry(p);const selectLabel=isDesired&&selectionPending?'Выбрано к применению':isActive&&v.selection_mode==='manual'?'Активен':'Выбрать к применению';const selectDisabled=state.vlessBusy||!v.running||!p.enabled||(isDesired&&selectionPending)||(isActive&&v.selection_mode==='manual');return `<tr><td>${i+1}</td><td><div class="vless-country${country.unknown?' unknown':''}" title="Страна определяется по префиксу имени сервера">${vlessCountryFlagHtml(p)} <span>${vlessEscape(country.name)}</span></div><strong>${vlessEscape(p.name)}</strong><div class="muted">${vlessEscape(p.address)}:${p.port}</div></td><td>${vlessEscape(params||'—')}</td><td>${isActive?'<span class="vless-badge">Сейчас используется</span> ':''}${pendingBadge}${badge}</td><td title="${vlessEscape(measurement.details)}"><strong>${vlessEscape(measurement.display)}</strong><div class="muted">${vlessEscape(measurement.details)}</div></td><td><div class="vless-profile-actions"><button class="btn ghost" onclick="selectVless(${p.id})" ${selectDisabled?'disabled':''}>${selectLabel}</button><button class="btn ghost" onclick="toggleVless(${p.id},${!p.enabled})" ${state.vlessBusy?'disabled':''}>${p.enabled?'Отключить':'Включить'}</button><button class="btn ghost" onclick="renameVless(${p.id})" ${state.vlessBusy?'disabled':''}>Имя</button><button class="btn danger" onclick="deleteVless(${p.id})" ${state.vlessBusy?'disabled':''}>Удалить</button></div></td></tr>`}).join('');
+  $('vlessProfilesBody').innerHTML=profiles.map((p,i)=>{const measurement=vlessProfileMeasurement(p);const badge=!p.enabled?'<span class="vless-badge off">Отключён</span>':measurement.failed?'<span class="vless-badge bad">Нет ответа</span>':measurement.stale?'<span class="vless-badge off">Проверка устарела</span>':measurement.source?'<span class="vless-badge">Есть измерение</span>':'<span class="vless-badge off">Нет измерений</span>';const isActive=active===`vless-profile-${p.id}`;const isDesired=desiredMode==='manual'&&desiredProfileId===p.id;const pendingBadge=isDesired&&selectionPending?'<span class="vless-badge pending">Будет выбран после применения</span> ':'';const params=[p.security==='reality'?'REALITY':'TLS/без TLS',p.flow||'без flow',p.server_name?'SNI: '+p.server_name:''].filter(Boolean).join(' · ');const country=vlessCountry(p);const selectLabel=isDesired&&selectionPending?'Выбрано к применению':isActive&&v.selection_mode==='manual'?'Активен':'Выбрать к применению';const selectDisabled=state.vlessBusy||!v.running||!p.enabled||(isDesired&&selectionPending)||(isActive&&v.selection_mode==='manual');return `<tr><td>${i+1}</td><td><div class="vless-country${country.unknown?' unknown':''}" title="Страна определяется по префиксу имени сервера">${vlessCountryFlagHtml(p)} <span>${vlessEscape(country.name)}</span></div><strong>${vlessEscape(p.name)}</strong><div class="muted">${vlessEscape(p.address)}:${p.port}</div></td><td>${vlessEscape(params||'—')}</td><td>${isActive?'<span class="vless-badge">Сейчас используется</span> ':''}${pendingBadge}${badge}</td><td title="${vlessEscape(measurement.details)}"><strong>${vlessEscape(measurement.display)}</strong><div class="muted">${vlessEscape(measurement.details)}</div></td><td><div class="vless-profile-actions"><button class="btn ghost" onclick="selectVless(${p.id})" ${selectDisabled?'disabled':''}>${selectLabel}</button><button class="btn ghost" onclick="toggleVless(${p.id},${!p.enabled})" ${state.vlessBusy?'disabled':''}>${p.enabled?'Отключить':'Включить'}</button><button class="btn ghost" onclick="renameVless(${p.id})" ${state.vlessBusy?'disabled':''}>Имя</button><button class="btn danger" onclick="deleteVless(${p.id})" ${state.vlessBusy?'disabled':''}>Удалить</button></div></td></tr>`}).join('');
 }
 function renderVlessSelectionHistory(){
   const panel=$('vlessSelectionHistoryPanel');if(!panel)return;
@@ -3815,7 +3611,6 @@ function renderVlessUrltestMeasurements(){
   const running=state.vless?.running===true;
   // Do not carry a previous monitor snapshot forward as the active server after sing-box stops.
   const active=running?(state.vless?.active_outbound||current?.active_outbound||null):null;
-  const limit=vlessIntervalSeconds(interval);
   const sorted=profiles.slice().sort((a,b)=>{
     const da=vlessProfileMeasurement(a)?.delay_ms,db=vlessProfileMeasurement(b)?.delay_ms;
     const aDelay=typeof da==='number'&&Number.isFinite(da)?da:Number.POSITIVE_INFINITY;
@@ -3824,38 +3619,11 @@ function renderVlessUrltestMeasurements(){
   });
   const cards=sorted.map(profile=>{
     const tag=`vless-profile-${profile.id}`;
-    const {sample,sampleIsManual,manualSample}=vlessUrltestSampleState(profile);
-    const measurement=vlessProfileMeasurement(profile)||{};
-    const source=measurement.source||'unknown';
-    const delay=typeof measurement.delay_ms==='number'&&Number.isFinite(measurement.delay_ms)&&measurement.delay_ms>0?Math.round(measurement.delay_ms):null;
-    const isManual=source==='manual';
-    const measuredAt=isManual?(manualSample?.last_checked_at||null):(sample?.observed_at||null);
-    const age=measuredAt?vlessMeasurementAgeSeconds(measuredAt):null;
-    let ageLabel='Нет измерения в снимке API sing-box';
-    let stale=false;
-    if(isManual){
-      ageLabel=measuredAt&&age!==null
-        ?`Ручная проверка · измерено ${formatVlessTimestamp(measuredAt)} · возраст ${formatVlessDuration(age)} · актуально`
-        :'Ручная проверка · время измерения неизвестно';
-    }else if(source==='manual-stale'||source==='manual-outage'||source==='urltest-monitor'){
-      ageLabel=measurement.display||'Нет актуального измерения';
-      stale=true;
-    }else if(sample&&!sampleIsManual){
-      if(measuredAt){
-        const timeLabel=`Измерено ${formatVlessTimestamp(measuredAt)}`;
-        if(age===null)ageLabel=`${timeLabel} · возраст неизвестен`;
-        else if(limit!==null&&age>limit){ageLabel=`${timeLabel} · возраст ${formatVlessDuration(age)} · УСТАРЕЛО`;stale=true;}
-        else if(limit!==null)ageLabel=`${timeLabel} · возраст ${formatVlessDuration(age)} · актуально`;
-        else ageLabel=`${timeLabel} · возраст ${formatVlessDuration(age)} · свежесть неизвестна`;
-        if(delay===null)ageLabel+=` · нет числовой задержки`;
-      }else{
-        ageLabel=measurement.display||'URLTest · sing-box: время измерения неизвестно · свежесть неизвестна';
-      }
-    }else if(measurement.display){
-      ageLabel=measurement.display;
-      stale=source==='manual-stale'||source==='manual-outage'||source==='urltest-monitor';
-    }
-    const ageTitle=measurement.details||ageLabel;
+    const measurement=vlessProfileMeasurement(profile);
+    const delay=measurement.delay_ms;
+    const ageLabel=measurement.display;
+    const ageTitle=measurement.details;
+    const stale=measurement.stale||measurement.failed;
     const country=vlessCountry(profile);
     const isActive=!!active&&active===tag;
     const title=`${profile.address||profile.name||'Сервер'}:${profile.port||443}`;
@@ -3864,7 +3632,7 @@ function renderVlessUrltestMeasurements(){
   const activeProfile=active?(state.vless?.profiles||[]).find(profile=>active===`vless-profile-${profile.id}`):null;
   const activeLabel=activeProfile?`${activeProfile.address}:${activeProfile.port}`:(active||'не определён');
   const status=!running?'sing-box остановлен — активный сервер не подсвечивается':current?`Снимок API: ${formatVlessTimestamp(current.observed_at)} · режим: ${current.selection_mode||'—'} · активный узел: ${activeLabel}`:'Снимок API sing-box пока недоступен';
-  panel.innerHTML=`<section class="vless-urltest-panel"><div class="vless-urltest-head"><div><div class="vless-urltest-title">Измерения URLTest · sing-box</div><p class="vless-urltest-note">Серверы отсортированы по последнему доступному измерению. Если свежего URLTest нет, отображается последняя ручная проверка BRUME 3 с явной маркировкой; источники не смешиваются.</p></div><div><div class="vless-urltest-meta">Интервал: ${vlessEscape(interval||'неизвестен')} · допуск: ${tolerance==null?'—':Number(tolerance)+' мс'}</div><button type="button" class="btn ghost" style="margin-top:6px;padding:7px 10px;font-size:11px" onclick="refreshVlessSelectionHistory()">Обновить</button></div></div><p class="vless-urltest-snapshot">${vlessEscape(status)}</p>${state.vlessSelectionHistoryError?`<p class="vless-urltest-note">Ошибка чтения снимка: ${vlessEscape(state.vlessSelectionHistoryError)}</p>`:''}${cards?`<div class="vless-urltest-grid">${cards}</div>`:'<div class="vless-urltest-empty">Включённых серверов пока нет.</div>'}<p class="vless-urltest-note">Обновление перечитывает результаты API sing-box и истории ручных проверок BRUME 3; новую проверку не запускает, маршрут и выбранный сервер не меняет. «мс» — задержка, а не пропускная способность в Мбит/с.</p></section>`;
+  panel.innerHTML=`<section class="vless-urltest-panel"><div class="vless-urltest-head"><div><div class="vless-urltest-title">Измерения URLTest · sing-box</div><p class="vless-urltest-note">Серверы отсортированы по последнему доступному измерению. Для каждого сервера показан источник последней проверки и обнаруженный период недоступности.</p></div><div><div class="vless-urltest-meta">Интервал: ${vlessEscape(interval||'неизвестен')} · допуск: ${tolerance==null?'—':Number(tolerance)+' мс'}</div><button type="button" class="btn ghost" style="margin-top:6px;padding:7px 10px;font-size:11px" onclick="refreshVlessSelectionHistory()">Обновить</button></div></div><p class="vless-urltest-snapshot">${vlessEscape(status)}</p>${state.vlessSelectionHistoryError?`<p class="vless-urltest-note">Ошибка чтения снимка: ${vlessEscape(state.vlessSelectionHistoryError)}</p>`:''}${cards?`<div class="vless-urltest-grid">${cards}</div>`:'<div class="vless-urltest-empty">Включённых серверов пока нет.</div>'}<p class="vless-urltest-note">Обновление перечитывает результаты API sing-box и истории ручных проверок BRUME 3; новую проверку не запускает, маршрут и выбранный сервер не меняет. «мс» — задержка, а не пропускная способность в Мбит/с.</p></section>`;
 }
 
 async function refreshVlessSelectionHistory(){
@@ -3873,12 +3641,11 @@ async function refreshVlessSelectionHistory(){
   renderVlessActiveMeasurement();
   if(state.vless)renderVlessProfiles();
   renderVlessSelectionHistory();
-  if(state.vless)renderVlessProfiles();
 }
 
-async function refreshVless(){try{state.vless=await api('/api/appliance/v1/vless');try{const history=await api('/api/appliance/v1/vless/delays/history');applyVlessDelayHistory(history.results||[],true)}catch(historyError){console.warn('VLESS delay history unavailable',historyError)}try{state.vlessSelectionHistory=await api('/api/appliance/v1/vless/selection-history');state.vlessSelectionHistoryError=null}catch(selectionHistoryError){state.vlessSelectionHistoryError=selectionHistoryError.message||'Журнал переключений недоступен'}state.vlessError=null;render();}catch(e){state.vlessError=e.message;renderVless()}}
+async function refreshVless(){try{state.vless=await api('/api/appliance/v1/vless');try{state.vlessSelectionHistory=await api('/api/appliance/v1/vless/selection-history');state.vlessSelectionHistoryError=null}catch(selectionHistoryError){state.vlessSelectionHistoryError=selectionHistoryError.message||'Журнал переключений недоступен'}state.vlessError=null;render();}catch(e){state.vlessError=e.message;renderVless()}}
 async function setVpnMode(mode){const current=state.vless?.traffic_mode||'unknown';if(current===mode)return;if(!confirm(`Переключить основной маршрут LAN на режим ${({wan:'WAN',vpn:'AmneziaWG',vless:'VLESS + REALITY'})[mode]||mode}? DIRECT-исключения Smart Routing сохранятся.`))return;try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vpn/mode',{method:'POST',body:JSON.stringify({mode})});state.vless={...(state.vless||{}),...result};await refreshAll();alert(`Режим подтверждён: ${({wan:'WAN',vpn:'AmneziaWG',vless:'VLESS + REALITY'})[result.traffic_mode||mode]||mode}`)}catch(e){alert('Не удалось переключить режим: '+e.message);await refreshAll()}finally{state.vlessBusy=false;renderVless()}}
-async function importVlessProfiles(){const input=$('vlessImportSource').value.trim();if(!input){alert('Вставьте ссылки VLESS или выберите JSON-файл экспорта.');return}let payload;try{if(input.startsWith('{')){payload=JSON.parse(input);if(!payload.profiles&&!payload.sources){payload={sources:[input]}}}else{payload={sources:input.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}}}catch(e){alert('JSON не распознан: '+e.message);return}try{state.vlessBusy=true;renderVless();$('vlessImportButton').disabled=true;const result=await api('/api/appliance/v1/vless/import',{method:'POST',body:JSON.stringify(payload)});state.vlessDelays={};state.vless=await api('/api/appliance/v1/vless');render();alert(`Импорт завершён. Добавлено: ${result.imported||0}; обновлено: ${result.updated||0}; ошибок: ${result.failed||0}. Нажмите «Применить и запустить / перезапустить», чтобы применить список.`)}catch(e){alert('Импорт не выполнен: '+e.message)}finally{state.vlessBusy=false;$('vlessImportButton').disabled=false;renderVless()}}
+async function importVlessProfiles(){const input=$('vlessImportSource').value.trim();if(!input){alert('Вставьте ссылки VLESS или выберите JSON-файл экспорта.');return}let payload;try{if(input.startsWith('{')){payload=JSON.parse(input);if(!payload.profiles&&!payload.sources){payload={sources:[input]}}}else{payload={sources:input.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}}}catch(e){alert('JSON не распознан: '+e.message);return}try{state.vlessBusy=true;renderVless();$('vlessImportButton').disabled=true;const result=await api('/api/appliance/v1/vless/import',{method:'POST',body:JSON.stringify(payload)});state.vless=await api('/api/appliance/v1/vless');render();alert(`Импорт завершён. Добавлено: ${result.imported||0}; обновлено: ${result.updated||0}; ошибок: ${result.failed||0}. Нажмите «Применить и запустить / перезапустить», чтобы применить список.`)}catch(e){alert('Импорт не выполнен: '+e.message)}finally{state.vlessBusy=false;$('vlessImportButton').disabled=false;renderVless()}}
 function loadVlessImportFile(event){const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{$('vlessImportSource').value=String(reader.result||'')};reader.onerror=()=>alert('Не удалось прочитать выбранный файл.');reader.readAsText(file)}
 let vlessSubscriptionPreview=null;
 
@@ -3913,7 +3680,6 @@ async function importVlessSubscription(){
   try{
     const result=await api('/api/appliance/v1/vless/subscription/import',{method:'POST',body:JSON.stringify(preview)});
     vlessSubscriptionPreview=null;
-    state.vlessDelays={};
     state.vless=await api('/api/appliance/v1/vless');
     render();
     results.textContent='Импорт завершён. Добавлено: '+Number(result.imported||0)+', обновлено: '+Number(result.updated||0)+', ошибок: '+Number(result.failed||0)+'. Для запуска новых серверов отдельно нажмите «Применить».';
@@ -3921,12 +3687,32 @@ async function importVlessSubscription(){
   finally{button.disabled=false;}
 }
 
-async function testVlessDelays(){try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vless/delays',{method:'POST'});applyVlessDelayHistory(result.results||[],false);renderVlessProfiles();alert(`Проверка завершена: отвечают ${result.reachable||0} из ${result.total||0} включённых серверов.`)}catch(e){alert('Не удалось проверить задержки: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function testVlessDelays(){try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vless/delays',{method:'POST'});await refreshVlessSelectionHistory();alert(`Проверка завершена: отвечают ${result.reachable||0} из ${result.total||0}. Без замера: ${result.unknown||0}.`)}catch(e){alert('Не удалось проверить задержки: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
 async function selectVless(profileId){try{state.vlessBusy=true;renderVless();const result=await api('/api/appliance/v1/vless/select',{method:'POST',body:JSON.stringify({profile_id:profileId===undefined?null:profileId})});state.vless=result;await refreshAll();}catch(e){alert('Не удалось выбрать сервер: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
 async function toggleVless(id,enabled){try{state.vlessBusy=true;renderVless();await api('/api/appliance/v1/vless/profiles/'+id,{method:'PATCH',body:JSON.stringify({enabled})});state.vless=await api('/api/appliance/v1/vless');}catch(e){alert('Не удалось изменить профиль: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
 async function renameVless(id){const profile=(state.vless?.profiles||[]).find(p=>p.id===id);if(!profile)return;const name=prompt('Название VLESS-сервера',profile.name);if(name===null)return;try{state.vlessBusy=true;renderVless();await api('/api/appliance/v1/vless/profiles/'+id,{method:'PATCH',body:JSON.stringify({name})});state.vless=await api('/api/appliance/v1/vless')}catch(e){alert('Не удалось изменить название: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
+async function deleteAllVless(){
+  const v=state.vless;
+  if(state.vlessBusy||!v?.profiles?.length)return;
+  const allowWan=v.traffic_mode==='vless'&&v.settings?.wan_fallback_enabled===true;
+  if(v.traffic_mode==='vless'&&!allowWan){
+    alert('LAN использует VLESS с включённым Kill Switch. Сначала выберите другой защищённый маршрут.');
+    return;
+  }
+  const route=allowWan?'LAN перейдёт напрямую на WAN.':v.wan_fallback_active?'LAN останется на WAN после удаления профилей.':'Текущий маршрут LAN сохранится.';
+  if(!confirm('Удалить все VLESS-серверы ('+v.profiles.length+'), включая отключённые? sing-box будет остановлен, автозапуск отключён. '+route+' Для восстановления понадобится импорт профилей.'))return;
+  state.vlessBusy=true;
+  renderVless();
+  try{
+    const result=await api('/api/appliance/v1/vless/profiles',{method:'DELETE',
+      body:JSON.stringify({confirm:true,revision:v.delete_revision,allow_wan:allowWan})});
+    state.vlessSelectionHistory=null;
+    alert('Удалено VLESS-серверов: '+result.deleted);
+  }catch(e){alert('Удаление VLESS: '+e.message);}
+  finally{try{await refreshAll();}finally{state.vlessBusy=false;renderVless();}}
+}
 async function deleteVless(id){const profile=(state.vless?.profiles||[]).find(p=>p.id===id);if(!profile||!confirm(`Удалить профиль «${profile.name}» из сохранённого списка? Установленная конфигурация изменится только после применения.`))return;try{state.vlessBusy=true;renderVless();await api('/api/appliance/v1/vless/profiles/'+id,{method:'DELETE'});state.vless=await api('/api/appliance/v1/vless')}catch(e){alert('Не удалось удалить профиль: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
-if(!window.__maxvpnVlessDelayTicker){window.__maxvpnVlessDelayTicker=window.setInterval(()=>{if(!state.vlessBusy&&state.vless){if(Object.keys(state.vlessDelayHistory||{}).length)renderVlessProfiles();void refreshVlessSelectionHistory()}},30000)}
+if(!window.__maxvpnVlessDelayTicker){window.__maxvpnVlessDelayTicker=window.setInterval(()=>{if(!state.vlessBusy&&state.vless){void refreshVlessSelectionHistory()}},30000)}
 
 async function toggleVlessKillSwitch(){if(!state.vless||state.vlessBusy)return;const currentFallbackEnabled=state.vless.settings?.wan_fallback_enabled===true;const nextFallbackEnabled=!currentFallbackEnabled;try{state.vlessBusy=true;renderVless();state.vless=await api('/api/appliance/v1/vless/settings',{method:'POST',body:JSON.stringify({wan_fallback_enabled:nextFallbackEnabled})})}catch(e){alert('Не удалось изменить Kill Switch: '+e.message)}finally{state.vlessBusy=false;renderVless()}}
 async function saveVlessSettings(){const settings={urltest_interval:$('vlessInterval').value,urltest_tolerance_ms:Number($('vlessTolerance').value)};try{state.vlessBusy=true;renderVless();state.vless=await api('/api/appliance/v1/vless/settings',{method:'POST',body:JSON.stringify(settings)});alert('Параметры URLTest сохранены. Интервал и допуск применятся после «Применить и запустить / перезапустить».')}catch(e){alert('Не удалось сохранить настройки: '+e.message)}finally{state.vlessBusy=false;renderVless()}}

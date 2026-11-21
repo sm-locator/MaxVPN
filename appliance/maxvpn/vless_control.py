@@ -6,8 +6,12 @@ The module does not change routing unless set_mode() is explicitly called.
 """
 
 import copy
+import fcntl
 import json
+import hashlib
 import ipaddress
+import sqlite3
+from contextlib import closing
 import datetime as _selection_datetime
 import uuid
 import os
@@ -18,7 +22,7 @@ import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
@@ -40,6 +44,11 @@ URLTEST_URL = "https://cp.cloudflare.com/generate_204"
 ALLOWED_INTERVALS = ("30s", "1m", "2m", "3m", "5m", "10m")
 WAN_FALLBACK_FAILURE_THRESHOLD = 2
 WAN_FALLBACK_RECOVERY_THRESHOLD = 2
+RUNTIME_LOCK_FILE = ROOT / "run" / "apply.lock"
+WATCHDOG_SCRIPT = Path("/usr/bin/maxvpn-vless-watchdog")
+WATCHDOG_READY_FILE = ROOT / "run" / "watchdog-shared-lock-v1.status"
+PROC_ROOT = Path("/proc")
+WATCHDOG_ROUTING_LOCK_VERSION = "MAXVPN_SHARED_ROUTE_LOCK_V1"
 LOCK = threading.RLock()
 
 
@@ -75,6 +84,14 @@ def _timestamp_datetime(value):
         if parsed.tzinfo is None
         else parsed.astimezone(timezone.utc)
     )
+
+
+def _sync_directory(path):
+    fd = os.open(str(path), os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
 
 
 def _serialized(method):
@@ -553,7 +570,7 @@ def _selection_timestamp_epoch(value):
     )
     if fraction_match:
         prefix, fraction, zone = fraction_match.groups()
-        text = prefix + "." + fraction[:6] + (zone or "")
+        text = prefix + "." + fraction[:6].ljust(6, "0") + (zone or "")
 
     try:
         parsed = _selection_datetime.datetime.fromisoformat(text.replace("Z", "+00:00"))
@@ -701,18 +718,26 @@ class VlessControl:
         self.config_file = Path(config_file or CONFIG_FILE)
         self.command_runner = command_runner or _run
         self.selection_history_file = Path(
-            selection_history_file or DATA / "vless-selection-history.json"
+            selection_history_file
+            or (self.profile_file.parent if profile_file else DATA)
+            / "vless-selection-history.json"
         )
         self.wan_fallback_state_file = self.profile_file.with_name(
             "vless-wan-fallback.json"
         )
         self._last_selection_snapshot = None
+        self._next_urltest_probe = {}
+        self._check_pending_clear = True
+        self._next_availability_compaction = 0
+        self.availability_file = self.selection_history_file.with_suffix(".sqlite3")
         self._wan_fallback_runtime_failures = 0
+        self._wan_fallback_control_api_failures = 0
         self._wan_fallback_profile_counters = {}
         self._wan_fallback_probe_scope = None
 
     def _reset_wan_fallback_monitor_state(self):
         self._wan_fallback_runtime_failures = 0
+        self._wan_fallback_control_api_failures = 0
         self._wan_fallback_profile_counters = {}
         self._wan_fallback_probe_scope = None
 
@@ -740,7 +765,7 @@ class VlessControl:
             return "unknown"
         return mode if mode in ("wan", "vpn", "vless") else "unknown"
 
-    def _running(self):
+    def _running(self, *, verify=False):
         result = self._exec(
             [
                 "ubus",
@@ -775,6 +800,8 @@ class VlessControl:
             ],
             timeout=3,
         )
+        if verify and check.returncode not in (0, 1):
+            raise VlessControlError("Не удалось проверить состояние sing-box.")
         return check.returncode == 0
 
     def _read_installed_config(self):
@@ -977,6 +1004,9 @@ class VlessControl:
             store["settings"].setdefault("urltest_tolerance_ms", 50)
             store["settings"].setdefault("wan_fallback_enabled", False)
             store.setdefault("selection", {"mode": "auto", "profile_id": None})
+            if store.get("clear_pending") is True:
+                self._finish_clear(store)
+            self._check_pending_clear = False
             return store
         if seed:
             store = self._seed_from_config()
@@ -1023,7 +1053,6 @@ class VlessControl:
                 output.flush()
                 os.fsync(output.fileno())
             os.replace(temporary, str(path))
-            os.chmod(path, 0o600)
         except Exception:
             try:
                 os.unlink(temporary)
@@ -1082,6 +1111,11 @@ class VlessControl:
                 f"vless-profile-{requested_profile_id}",
             )
         return "auto", None, "vless-auto"
+
+    @staticmethod
+    def _delete_revision(store, mode):
+        data = json.dumps([store, mode], sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(data.encode()).hexdigest()
 
     def _runtime_info(self, store):
         installed = (
@@ -1202,6 +1236,7 @@ class VlessControl:
             "desired_outbound": desired_outbound,
             "selection_pending": selection_pending,
             "profiles": self._profile_list(store),
+            "delete_revision": self._delete_revision(store, mode),
             "settings": copy.deepcopy(
                 store.get("settings")
                 or {
@@ -1531,6 +1566,227 @@ class VlessControl:
         return self._runtime_info(store)
 
     @_serialized
+    def delete_all_profiles(self, data):
+        if not isinstance(data, dict) or data.get("confirm") is not True:
+            raise VlessControlError("Подтвердите удаление всех VLESS-серверов.")
+        # Match server.routing_lock(). The live shell helpers do not flock,
+        # so this lease must cover the *whole* route transition, commit and
+        # error rollback; it cannot be acquired only after set_mode('wan').
+        RUNTIME_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with RUNTIME_LOCK_FILE.open("a") as route_lock:
+            fcntl.flock(route_lock.fileno(), fcntl.LOCK_EX)
+            return self._delete_all_profiles_under_routing_lock(data)
+
+    def _delete_all_profiles_under_routing_lock(self, data):
+        store = self._load_store()
+        mode = self._read_mode()
+        if (
+            not store["profiles"]
+            and store.get("last_clear_revision") == data.get("revision")
+            and data.get("revision")
+        ):
+            return {"deleted": 0, "traffic_mode": mode}
+        if data.get("revision") != self._delete_revision(store, mode):
+            raise VlessControlError(
+                "Список, настройки или маршрут изменились. Обновите страницу и подтвердите удаление снова."
+            )
+        if mode not in ("wan", "vpn", "vless"):
+            raise VlessControlError("Не удалось подтвердить маршрут LAN.")
+        if (
+            mode == "wan"
+            and self._load_wan_fallback_state()["active"]
+            and store["settings"].get("wan_fallback_enabled") is not True
+        ):
+            raise VlessControlError(
+                "Kill Switch включён. Сначала восстановите защищённый маршрут LAN."
+            )
+        was_vless = mode == "vless"
+        if was_vless:
+            # The live pre-2026-11-21 watchdog repairs VLESS without any
+            # route mutex. Refuse destructive VLESS-mode operations until a
+            # reviewed, shared-lock watchdog has been installed.
+            if not self._watchdog_routing_lock_compatible():
+                raise VlessControlError(
+                    "Установленный VLESS watchdog не поддерживает общую "
+                    "блокировку маршрутов. Обновите и перезапустите watchdog перед удалением."
+                )
+            if store["settings"].get("wan_fallback_enabled") is not True:
+                raise VlessControlError(
+                    "LAN использует VLESS с Kill Switch. Сначала выберите другой защищённый маршрут."
+                )
+            if data.get("allow_wan") is not True:
+                raise VlessControlError("Подтвердите переход LAN напрямую на WAN.")
+
+        try:
+            if was_vless:
+                self.set_mode("wan")
+                mode = "wan"
+
+            # The shared routing lease was already acquired before set_mode().
+            if self._read_mode() != mode:
+                raise VlessControlError("Маршрут LAN изменился. Удаление отменено.")
+            self._clear_inactive_profiles(store, data["revision"])
+        except Exception:
+            if not was_vless:
+                raise
+
+            # A crash after the atomic empty-store rename must never restore
+            # VLESS using profiles that have already been deleted.
+            saved = _read_json_file(self.profile_file)
+            if saved is None:
+                raise VlessControlError(
+                    "Не удалось проверить состояние списка после ошибки удаления. "
+                    "Проверьте сохранённые профили и маршрут LAN."
+                ) from None
+            committed = (
+                saved.get("last_clear_revision") == data["revision"]
+                and saved.get("profiles") == []
+            )
+            if committed:
+                raise VlessControlError(
+                    "Удаление профилей зафиксировано, но очистка не завершилась. "
+                    "LAN оставлен в WAN. Проверьте состояние сервиса."
+                ) from None
+
+            # Until the empty store is committed, restore the previous VLESS
+            # route only when WAN is still selected. Never overwrite a route
+            # that another actor selected during the operation.
+            current_mode = self._read_mode()
+            if current_mode == "wan":
+                try:
+                    self.set_mode("vless")
+                except Exception:
+                    raise VlessControlError(
+                        "Профили сохранены, но восстановление VLESS не удалось. "
+                        "LAN остаётся в WAN. Проверьте сервис и маршрутизацию."
+                    ) from None
+            elif current_mode != "vless":
+                raise VlessControlError(
+                    "Удаление отменено. Маршрут LAN изменился извне; "
+                    "проверьте его вручную."
+                ) from None
+            raise VlessControlError(
+                "Удаление отменено: профили сохранены, маршрут VLESS восстановлен."
+            ) from None
+        return {"deleted": len(store["profiles"]), "traffic_mode": mode}
+
+    @staticmethod
+    def _watchdog_routing_lock_compatible():
+        try:
+            content = WATCHDOG_SCRIPT.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            # No watchdog script: there is no automatic competing repair.
+            return True
+        except (OSError, UnicodeError):
+            return False
+        if not (
+            WATCHDOG_ROUTING_LOCK_VERSION in content
+            and "/opt/maxvpn-appliance/run/apply.lock" in content
+            and 'with_routing_lock "$VLESS_ON"' in content
+            and 'with_routing_lock "$SING_BOX_INIT" "$SERVICE_ACTION"' in content
+        ):
+            return False
+        # A replaced shell file does not replace a process already executing
+        # the old watchdog. A boot/start marker proves that the running shell
+        # started with the lock-aware version, not just that disk was updated.
+        try:
+            parts = WATCHDOG_READY_FILE.read_text(encoding="ascii").split()
+            if len(parts) != 2 or not all(x.isdigit() for x in parts):
+                return False
+            pid, start = parts
+            stat = (PROC_ROOT / pid / "stat").read_text(encoding="ascii")
+            # Parse after the process name in parentheses. starttime is
+            # /proc/PID/stat field 22 (index 19 after the comm field).
+            values = stat.rsplit(")", 1)[1].split()
+            if len(values) <= 19 or values[19] != start:
+                return False
+            args = (PROC_ROOT / pid / "cmdline").read_bytes().split(b"\0")
+            return b"/usr/bin/maxvpn-vless-watchdog" in args
+        except (OSError, UnicodeError, ValueError, IndexError):
+            return False
+
+    def _service_enabled(self):
+        if not SERVICE.is_file():
+            return False
+        result = self._exec([str(SERVICE), "enabled"])
+        if result.returncode not in (0, 1):
+            raise VlessControlError("Не удалось проверить автозапуск sing-box.")
+        return result.returncode == 0
+
+    def _clear_inactive_profiles(self, store, revision):
+        running = self._running(verify=True)
+        if running and not SERVICE.is_file():
+            raise VlessControlError(
+                "Не удалось подтвердить управление работающим sing-box."
+            )
+        enabled = self._service_enabled()
+        try:
+            if enabled:
+                self._checked(
+                    [str(SERVICE), "disable"],
+                    "Не удалось отключить автозапуск sing-box",
+                )
+            if running:
+                self._checked([str(SERVICE), "stop"], "Не удалось остановить sing-box")
+            if self._running(verify=True) or self._service_enabled():
+                raise VlessControlError(
+                    "Остановка и отключение автозапуска sing-box не подтверждены."
+                )
+            empty = dict(
+                store,
+                profiles=[],
+                selection={"mode": "auto", "profile_id": None},
+                clear_pending=True,
+                last_clear_revision=revision,
+            )
+            # The empty store and cleanup intent are committed in one rename.
+            # Until this succeeds even the installed config is recoverable.
+            self._save_store(empty)
+        except Exception:
+            try:
+                if enabled:
+                    self._checked([str(SERVICE), "enable"], "Ошибка автозапуска")
+                if running and not self._running(verify=True):
+                    self._checked([str(SERVICE), "start"], "Ошибка запуска")
+            except Exception:
+                raise VlessControlError(
+                    "Профили сохранены. Не удалось восстановить состояние sing-box. Проверьте сервис и маршрут LAN."
+                ) from None
+            raise VlessControlError(
+                "Удаление не завершено. Список профилей сохранён. Проверьте маршрут LAN."
+            ) from None
+        self._check_pending_clear = True
+        _sync_directory(self.profile_file.parent)
+        self._finish_clear(empty)
+
+    def _finish_clear(self, store):
+        # Repeat after interruption before allowing an import to reuse IDs.
+        paths = (
+            self.config_file,
+            self.wan_fallback_state_file,
+            Path(DELAY_HISTORY_FILE),
+            self.selection_history_file,
+            self.availability_file,
+            Path(str(self.availability_file) + "-journal"),
+        )
+        for path in paths:
+            path.unlink(missing_ok=True)
+        for directory in {path.parent for path in paths}:
+            if directory.exists():
+                _sync_directory(directory)
+        self._last_selection_snapshot = None
+        self._next_urltest_probe.clear()
+        self._reset_wan_fallback_monitor_state()
+        del store["clear_pending"]
+        self._save_store(store, backup=False)
+        _sync_directory(self.profile_file.parent)
+        self._check_pending_clear = False
+
+    def _recover_clear_before_monitoring(self):
+        if self._check_pending_clear and self.profile_file.is_file():
+            self._load_store()
+
+    @_serialized
     def update_settings(self, data):
         store = self._load_store()
         interval = data.get(
@@ -1759,31 +2015,49 @@ class VlessControl:
             return self._runtime_info(self._load_store())
 
     def stop(self):
+        # The watchdog and bulk-delete worker use the same flock, so a stop
+        # cannot race their service-repair or WAN transition paths.
         with LOCK:
-            fallback_state = self._load_wan_fallback_state()
-            fallback_state["active"] = False
-            fallback_state["selection_mode"] = None
-            fallback_state["fallback_started_at"] = None
-            fallback_state["profile_counters"] = {}
-            fallback_state["probe_scope"] = None
-            fallback_state["runtime_consecutive_failures"] = 0
-            self._reset_wan_fallback_monitor_state()
-            self._save_wan_fallback_state(fallback_state)
-            try:
-                self._checked(
-                    [VLESS_STOP_HELPER],
-                    "Не удалось безопасно остановить sing-box",
-                    timeout=40,
-                )
-            except FileNotFoundError as exc:
-                raise VlessControlError(
-                    "Обновите скрипты маршрутизации MaxVPN перед остановкой sing-box."
-                ) from exc
-            if self._running():
-                raise VlessControlError(
-                    "sing-box продолжает работать после команды остановки."
-                )
-            return self._runtime_info(self._load_store())
+            RUNTIME_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with RUNTIME_LOCK_FILE.open("a") as route_lock:
+                fcntl.flock(route_lock.fileno(), fcntl.LOCK_EX)
+                mode = self._read_mode()
+                if mode == "vless":
+                    raise VlessControlError(
+                        "Нельзя остановить sing-box при маршрутизации LAN через VLESS. "
+                        "Сначала выберите защищённый VPN или явно разрешённый WAN."
+                    )
+                if mode not in ("vpn", "wan"):
+                    raise VlessControlError(
+                        "Не удалось подтвердить защищённый маршрут перед остановкой sing-box."
+                    )
+                try:
+                    self._checked(
+                        [VLESS_STOP_HELPER],
+                        "Не удалось безопасно остановить sing-box",
+                        timeout=40,
+                    )
+                except FileNotFoundError as exc:
+                    raise VlessControlError(
+                        "Отсутствует скрипт безопасной остановки sing-box."
+                    ) from exc
+                if self._running():
+                    raise VlessControlError(
+                        "sing-box продолжает работать после команды остановки."
+                    )
+
+                # Do not clear the recovery marker unless the stop succeeds:
+                # an aborted stop must not silently change fallback policy.
+                fallback_state = self._load_wan_fallback_state()
+                fallback_state["active"] = False
+                fallback_state["selection_mode"] = None
+                fallback_state["fallback_started_at"] = None
+                fallback_state["profile_counters"] = {}
+                fallback_state["probe_scope"] = None
+                fallback_state["runtime_consecutive_failures"] = 0
+                self._reset_wan_fallback_monitor_state()
+                self._save_wan_fallback_state(fallback_state)
+                return self._runtime_info(self._load_store())
 
     @_serialized
     def select_outbound(self, profile_id=None):
@@ -1957,205 +2231,240 @@ class VlessControl:
             except FileNotFoundError:
                 pass
 
-    def _record_profile_availability(self, document, current, previous):
-        """Track transitions in sing-box's successful URLTest history.
-
-        Empty history is only considered a loss of result after this monitor has
-        previously observed a successful sample for that profile. A first-ever
-        empty history remains unknown. If every previously successful profile
-        disappears from the same snapshot and no timestamped history remains,
-        treat it as a possible sing-box history reset rather than asserting a
-        simultaneous outage for every server.
-        """
-        states = document.setdefault("profile_availability", {})
-        if not isinstance(states, dict):
-            states = {}
-            document["profile_availability"] = states
-
-        previous_samples = (
-            previous.get("profile_delays", {}) if isinstance(previous, dict) else {}
-        )
-        current_samples = current.get("profile_delays", {})
-        if not isinstance(previous_samples, dict):
-            previous_samples = {}
-        if not isinstance(current_samples, dict):
-            current_samples = {}
-
-        def sample_parts(sample):
-            if not isinstance(sample, dict):
-                return None, None
-            delay = sample.get("delay_ms")
-            if isinstance(delay, bool) or not isinstance(delay, int) or delay <= 0:
-                delay = None
-            observed = sample.get("observed_at")
-            if not isinstance(observed, str) or not observed.strip():
-                observed = None
-            return delay, observed
-
-        previous_success_tags = {
-            tag
-            for tag, sample in previous_samples.items()
-            if isinstance(tag, str)
-            and re.fullmatch(r"vless-profile-[1-9][0-9]*", tag)
-            and sample_parts(sample)[0] is not None
-            and sample_parts(sample)[1] is not None
-        }
-        # Seed the new availability journal from the last persisted snapshot.
-        # This is important when the patch is first installed: a profile may
-        # disappear from history on the very first new observation, before the
-        # new per-profile state has ever been written.
-        for tag in previous_success_tags:
-            match = re.fullmatch(r"vless-profile-([1-9][0-9]*)", tag)
-            if not match:
-                continue
-            profile_id = int(match.group(1))
-            key = str(profile_id)
-            if key not in states:
-                previous_delay, previous_at = sample_parts(previous_samples.get(tag))
-                states[key] = {
-                    "profile_id": profile_id,
-                    "status": "reachable",
-                    "reason": None,
-                    "first_missing_at": None,
-                    "last_success_at": previous_at,
-                    "last_success_observed_at": previous_at,
-                    "last_success_delay_ms": previous_delay,
-                    "last_recovered_at": None,
-                    "last_outage_duration_seconds": None,
-                    "status_observed_at": previous.get("observed_at"),
-                }
-        current_success_tags = {
-            tag
-            for tag, sample in current_samples.items()
-            if isinstance(tag, str)
-            and re.fullmatch(r"vless-profile-[1-9][0-9]*", tag)
-            and sample_parts(sample)[0] is not None
-            and sample_parts(sample)[1] is not None
-        }
-        has_timestamped_history = any(
-            sample_parts(sample)[1] is not None for sample in current_samples.values()
-        )
-        possible_history_reset = (
-            bool(previous_success_tags)
-            and not current_success_tags
-            and not has_timestamped_history
-        )
-        monitor_observed_at = current.get("observed_at")
-        if not isinstance(monitor_observed_at, str) or not monitor_observed_at:
-            monitor_observed_at = _timestamp_iso(_utc_now())
-
-        changed = False
-        if possible_history_reset:
-            for key, stored in list(states.items()):
-                if not isinstance(stored, dict) or stored.get("status") != "reachable":
-                    continue
-                entry = dict(stored)
-                entry["status"] = "unknown"
-                entry["reason"] = "history_reset"
-                entry["status_observed_at"] = monitor_observed_at
-                entry["first_missing_at"] = None
-                states[key] = entry
-                changed = True
-
-        for tag, sample in current_samples.items():
-            match = (
-                re.fullmatch(r"vless-profile-([1-9][0-9]*)", tag)
-                if isinstance(tag, str)
-                else None
-            )
-            if not match:
-                continue
-            profile_id = int(match.group(1))
-            key = str(profile_id)
-            delay, sample_at = sample_parts(sample)
-            entry = dict(states.get(key) or {})
-            entry.setdefault("profile_id", profile_id)
-            entry.setdefault("status", "unknown")
-            entry.setdefault("reason", "no_successful_history")
-
-            last_success_at = entry.get("last_success_observed_at")
-            last_success_dt = _timestamp_datetime(last_success_at)
-            sample_dt = _timestamp_datetime(sample_at) if sample_at else None
-            is_new_timestamped_sample = sample_dt is not None and (
-                last_success_dt is None or sample_dt > last_success_dt
-            )
-
-            if delay is not None and (sample_at is None or is_new_timestamped_sample):
-                recovered_at = sample_at or monitor_observed_at
-                if entry.get("status") == "no_result" and entry.get("first_missing_at"):
-                    missing_dt = _timestamp_datetime(entry.get("first_missing_at"))
-                    recovered_dt = _timestamp_datetime(recovered_at)
-                    if missing_dt is not None and recovered_dt is not None:
-                        entry["last_outage_duration_seconds"] = max(
-                            0, int((recovered_dt - missing_dt).total_seconds())
-                        )
-                    entry["last_recovered_at"] = recovered_at
-                entry["status"] = "reachable"
-                entry["reason"] = None
-                entry["status_observed_at"] = monitor_observed_at
-                entry["last_success_at"] = recovered_at
-                entry["last_success_observed_at"] = recovered_at
-                entry["last_success_delay_ms"] = delay
-                entry["first_missing_at"] = None
-                states[key] = entry
-                changed = True
-                continue
-
-            # A timestamp with no positive delay is direct evidence of a failed
-            # URLTest sample. Empty history is weaker: only a prior reachable
-            # state lets us start a missing-result interval.
-            if sample_at and delay is None and is_new_timestamped_sample:
-                if (
-                    entry.get("status") != "no_result"
-                    or entry.get("first_missing_at") != sample_at
-                ):
-                    entry["status"] = "no_result"
-                    entry["reason"] = "failed_urltest_sample"
-                    entry["first_missing_at"] = (
-                        entry.get("first_missing_at") or sample_at
+    def _availability_connection(self, document):
+        # Only timestamps, numeric IDs, sources and delays enter this database.
+        self.availability_file.parent.mkdir(parents=True, exist_ok=True)
+        db = sqlite3.connect(str(self.availability_file))
+        try:
+            if not db.execute("PRAGMA user_version").fetchone()[0]:
+                with db:
+                    db.execute(
+                        """CREATE TABLE IF NOT EXISTS checks (
+                        profile INTEGER NOT NULL, at TEXT NOT NULL, source TEXT NOT NULL,
+                        delay INTEGER, PRIMARY KEY (profile, at)
+                    ) WITHOUT ROWID"""
                     )
-                    entry["last_failure_observed_at"] = sample_at
-                    entry["status_observed_at"] = monitor_observed_at
-                    states[key] = entry
-                    changed = True
+                    db.execute(
+                        "CREATE INDEX IF NOT EXISTS successes ON checks(profile, at) WHERE delay IS NOT NULL"
+                    )
+                    db.execute(
+                        "CREATE INDEX IF NOT EXISTS failures ON checks(profile, at) WHERE delay IS NULL"
+                    )
+                    self._seed_availability(db, document)
+                    db.execute("PRAGMA user_version = 1")
+            if time.monotonic() >= self._next_availability_compaction:
+                with db:
+                    self._compact_availability(db, _utc_now() - timedelta(hours=1))
+                self._next_availability_compaction = time.monotonic() + 3600
+            return db
+        except Exception:
+            db.close()
+            raise
+
+    @staticmethod
+    def _compact_availability(db, cutoff):
+        # Retain both endpoints of each historical run (first failure, last
+        # failure, recovery and most recent success). Recent checks stay
+        # individually orderable, including observations received out of order.
+        db.execute(
+            """
+            WITH runs AS (
+                SELECT profile, at, delay IS NULL AS failed,
+                       lag(delay IS NULL) OVER timeline AS previous,
+                       lead(delay IS NULL) OVER timeline AS following
+                FROM checks WHERE at < ?
+                WINDOW timeline AS (PARTITION BY profile ORDER BY at)
+            )
+            DELETE FROM checks WHERE (profile, at) IN (
+                SELECT profile, at FROM runs
+                WHERE failed=previous AND failed=following
+                AND (failed=0 OR at < (
+                    SELECT max(at) FROM checks WHERE profile=runs.profile AND delay IS NOT NULL
+                ))
+            )
+        """,
+            (cutoff.isoformat(timespec="microseconds"),),
+        )
+
+    @staticmethod
+    def _add_check(db, profile_id, at, source, delay):
+        epoch = _selection_timestamp_epoch(at) if isinstance(at, str) else None
+        if epoch is None or not str(profile_id).isdigit():
+            return
+        stamp = datetime.fromtimestamp(epoch, timezone.utc).isoformat(
+            timespec="microseconds"
+        )
+        # One timestamp is one observation. A success beats a simultaneous
+        # failure, and a manual reading identifies its echo in Clash history.
+        db.execute(
+            """INSERT INTO checks VALUES (?, ?, ?, ?)
+                      ON CONFLICT(profile, at) DO UPDATE SET
+                          source=excluded.source, delay=excluded.delay
+                      WHERE (checks.delay IS NULL AND excluded.delay IS NOT NULL)
+                         OR ((checks.delay IS NULL) = (excluded.delay IS NULL)
+                             AND checks.source != 'manual' AND excluded.source='manual')""",
+            (int(profile_id), stamp, source, delay),
+        )
+
+    def _seed_availability(self, db, document):
+        # Legacy files contain summaries, not every historical observation.
+        # Import only their actual evidence and never the old missing-history heuristic.
+        for key, entry in self._load_delay_history()["profiles"].items():
+            recovered = _timestamp_datetime(entry.get("last_recovered_at"))
+            duration = entry.get("last_outage_duration_seconds")
+            if recovered and type(duration) is int and duration > 0:
+                self._add_check(
+                    db,
+                    key,
+                    _timestamp_iso(recovered - timedelta(seconds=duration)),
+                    "manual",
+                    None,
+                )
+            for field in ("last_outage_started_at", "first_failed_at"):
+                self._add_check(db, key, entry.get(field), "manual", None)
+            for field in ("last_recovered_at", "last_success_at"):
+                self._add_check(
+                    db,
+                    key,
+                    entry.get(field),
+                    "manual",
+                    (
+                        (entry.get("delay_ms") or 0)
+                        if entry.get(field) == entry.get("last_checked_at")
+                        else 0
+                    ),
+                )
+            if entry.get("first_failed_at"):
+                self._add_check(db, key, entry.get("last_checked_at"), "manual", None)
+        for key, item in document.get("profile_availability", {}).items():
+            self._add_check(
+                db,
+                key,
+                item.get("last_success_observed_at"),
+                "urltest",
+                item.get("last_success_delay_ms") or 0,
+            )
+            if item.get("reason") == "failed_urltest_sample":
+                # first_missing_at could precede the first real failed probe.
+                self._add_check(
+                    db, key, item.get("last_failure_observed_at"), "urltest", None
+                )
+        self._record_urltests(db, document.get("last_observation") or {})
+
+    def _record_urltests(self, db, snapshot):
+        for tag, sample in (snapshot.get("profile_delays") or {}).items():
+            match = re.fullmatch(r"vless-profile-([1-9][0-9]*)", tag)
+            if not match or not isinstance(sample, dict):
                 continue
+            for check in sample.get("checks") or [sample]:
+                delay = check.get("delay_ms")
+                if type(delay) is int and delay > 0:
+                    self._add_check(
+                        db, match[1], check.get("observed_at"), "urltest", delay
+                    )
+                elif check.get("failed") is True:
+                    self._add_check(
+                        db, match[1], check.get("observed_at"), "urltest", None
+                    )
 
-            if (
-                delay is None
-                and sample_at is None
-                and entry.get("status") == "reachable"
-                and entry.get("last_success_observed_at")
-            ):
-                if possible_history_reset:
-                    # The global reset branch above intentionally suppresses a
-                    # false mass-outage claim. Wait for a new successful sample.
-                    entry["status"] = "unknown"
-                    entry["reason"] = "history_reset"
-                    entry["status_observed_at"] = monitor_observed_at
-                    entry["first_missing_at"] = None
-                else:
-                    entry["status"] = "no_result"
-                    entry["reason"] = "successful_history_disappeared"
-                    entry["first_missing_at"] = monitor_observed_at
-                    entry["status_observed_at"] = monitor_observed_at
-                states[key] = entry
-                changed = True
-            elif key not in states:
-                states[key] = {
-                    "profile_id": profile_id,
-                    "status": "unknown",
-                    "reason": "no_successful_history",
-                    "first_missing_at": None,
-                    "last_success_at": None,
-                    "last_success_observed_at": None,
-                    "last_success_delay_ms": None,
-                    "last_recovered_at": None,
-                    "last_outage_duration_seconds": None,
-                    "status_observed_at": monitor_observed_at,
+    @staticmethod
+    def _profile_availability(db, profile_id, now):
+        def one(query, *args):
+            return db.execute(query, (profile_id, *args)).fetchone()
+
+        # Success wins ties. Replaying a snapshot or receiving an older result
+        # cannot move the start past a failure already recorded in this period.
+        success = one(
+            "SELECT at, delay FROM checks WHERE profile=? AND delay IS NOT NULL ORDER BY at DESC LIMIT 1"
+        )
+        since = success[0] if success else ""
+        first = one(
+            "SELECT at FROM checks WHERE profile=? AND delay IS NULL AND at>? ORDER BY at LIMIT 1",
+            since,
+        )
+        latest = one(
+            "SELECT at, source, delay FROM checks WHERE profile=? ORDER BY at DESC LIMIT 1"
+        )
+        previous_failure = one(
+            "SELECT max(at) FROM checks WHERE profile=? AND delay IS NULL AND at<?",
+            since,
+        )[0]
+        recovered = started = None
+        if previous_failure:
+            recovered = one(
+                "SELECT min(at) FROM checks WHERE profile=? AND delay IS NOT NULL AND at>?",
+                previous_failure,
+            )[0]
+            before = one(
+                "SELECT max(at) FROM checks WHERE profile=? AND delay IS NOT NULL AND at<?",
+                previous_failure,
+            )[0]
+            started = one(
+                "SELECT min(at) FROM checks WHERE profile=? AND delay IS NULL AND at>? AND at<=?",
+                before or "",
+                previous_failure,
+            )[0]
+
+        elapsed = (
+            (now - _timestamp_datetime(first[0])).total_seconds() if first else None
+        )
+        return {
+            "profile_id": int(profile_id),
+            "status": "no_result" if first else "reachable" if success else "unknown",
+            "first_failed_at": _timestamp_iso(first[0]) if first else None,
+            "first_missing_at": _timestamp_iso(first[0]) if first else None,
+            "last_checked_at": _timestamp_iso(latest[0]) if latest else None,
+            "source": latest[1] if latest else None,
+            "status_observed_at": _timestamp_iso(latest[0]) if latest else None,
+            "last_success_observed_at": _timestamp_iso(since),
+            "last_failure_observed_at": _timestamp_iso(
+                latest[0] if first else previous_failure
+            ),
+            "delay_ms": (latest[2] or None) if latest else None,
+            "last_success_at": _timestamp_iso(since),
+            "last_success_delay_ms": (success[1] or None) if success else None,
+            "unavailable_seconds": max(0, int(elapsed)) if first else None,
+            "last_recovered_at": _timestamp_iso(recovered),
+            "last_outage_duration_seconds": (
+                int(
+                    (
+                        _timestamp_datetime(recovered) - _timestamp_datetime(started)
+                    ).total_seconds()
+                )
+                if recovered and started
+                else None
+            ),
+        }
+
+    @_serialized
+    def poll_selection(self, read_snapshot):
+        # Serialize the read with delete/import so an in-flight pre-delete
+        # snapshot cannot re-create history for a subsequently reused tag.
+        self._recover_clear_before_monitoring()
+        snapshot = read_snapshot()
+        samples = snapshot["profile_delays"]
+        now = time.monotonic()
+        interval = _selection_interval_seconds(snapshot.get("urltest_interval")) or 180
+        pending = []
+        for tag, sample in samples.items():
+            if sample.get("observed_at") or self._next_urltest_probe.get(tag, 0) > now:
+                continue
+            pending.append({"id": int(tag.rsplit("-", 1)[1])})
+            self._next_urltest_probe[tag] = now + interval
+        # sing-box removes failed results from /proxies. Confirm an empty
+        # history through its delay endpoint at most once per URLTest interval.
+        for result in self._probe_profiles(pending):
+            if result["reachable"] is not None:
+                samples["vless-profile-" + str(result["profile_id"])] = {
+                    "observed_at": result["checked_at"],
+                    "delay_ms": result["delay_ms"],
+                    "failed": result["reachable"] is False,
                 }
-                changed = True
-
-        return changed
+        active = samples.get(snapshot.get("active_outbound"), {})
+        snapshot["active_delay_ms"] = active.get("delay_ms")
+        snapshot["active_delay_observed_at"] = active.get("observed_at")
+        self.record_selection_observation(snapshot)
+        return snapshot
 
     @_serialized
     def record_selection_observation(self, snapshot):
@@ -2167,6 +2476,7 @@ class VlessControl:
         """
         if not isinstance(snapshot, dict):
             raise VlessControlError("Invalid VLESS selection observation")
+        self._recover_clear_before_monitoring()
         current = dict(snapshot)
         mode = current.get("selection_mode")
         active = current.get("active_outbound")
@@ -2190,9 +2500,8 @@ class VlessControl:
         if previous is None:
             previous = document.get("last_observation")
 
-        availability_changed = self._record_profile_availability(
-            document, current, previous if isinstance(previous, dict) else None
-        )
+        with closing(self._availability_connection(document)) as db, db:
+            self._record_urltests(db, current)
 
         event = None
         changed = False
@@ -2281,12 +2590,7 @@ class VlessControl:
 
         # Persist a baseline on startup and on actual state changes only. This
         # avoids rewriting flash storage every 15-second monitor interval.
-        if (
-            bootstrapping
-            or changed
-            or availability_changed
-            or document.get("last_observation") is None
-        ):
+        if bootstrapping or changed or document.get("last_observation") is None:
             document["last_observation"] = current
             self._save_selection_history(document)
         self._last_selection_snapshot = current
@@ -2294,6 +2598,7 @@ class VlessControl:
 
     @_serialized
     def get_selection_history(self, monitor=None, current=None):
+        self._recover_clear_before_monitoring()
         document = self._load_selection_history()
         snapshot = current
         if snapshot is None:
@@ -2334,15 +2639,15 @@ class VlessControl:
 
         availability = {}
         now = _utc_now()
-        for profile_id, stored in document.get("profile_availability", {}).items():
-            item = dict(stored)
-            unavailable_seconds = None
-            if item.get("status") == "no_result" and item.get("first_missing_at"):
-                started = _timestamp_datetime(item.get("first_missing_at"))
-                if started is not None:
-                    unavailable_seconds = max(0, int((now - started).total_seconds()))
-            item["unavailable_seconds"] = unavailable_seconds
-            availability[str(profile_id)] = item
+        with closing(self._availability_connection(document)) as db:
+            ids = {
+                str(row[0]) for row in db.execute("SELECT DISTINCT profile FROM checks")
+            }
+            for tag in (snapshot or {}).get("profile_delays", {}):
+                if re.fullmatch(r"vless-profile-[1-9][0-9]*", tag):
+                    ids.add(tag.rsplit("-", 1)[1])
+            for key in ids:
+                availability[key] = self._profile_availability(db, key, now)
 
         return {
             "monitor": dict(monitor or {}),
@@ -2442,9 +2747,11 @@ class VlessControl:
             result = self._exec(
                 [
                     "curl",
-                    "-fsS",
+                    "-sS",
                     "--max-time",
                     "7",
+                    "--write-out",
+                    "\n%{http_code}",
                     "--get",
                     "--data-urlencode",
                     "url=" + URLTEST_URL,
@@ -2454,22 +2761,26 @@ class VlessControl:
                 ],
                 timeout=8,
             )
-            delay = None
+            delay = reachable = None
             if result.returncode == 0:
-                try:
-                    value = json.loads(result.stdout or "{}").get("delay")
-                    if (
-                        isinstance(value, int)
-                        and not isinstance(value, bool)
-                        and value > 0
-                    ):
-                        delay = value
-                except (ValueError, TypeError, AttributeError):
-                    pass
+                body, _, status = (result.stdout or "").rpartition("\n")
+                if status in ("503", "504"):
+                    reachable = False
+                elif status == "200":
+                    try:
+                        value = json.loads(body).get("delay")
+                    except (ValueError, AttributeError):
+                        value = None
+                    if type(value) is int and value > 0:
+                        delay, reachable = value, True
             return {
                 "profile_id": int(profile["id"]),
                 "delay_ms": delay,
-                "reachable": delay is not None,
+                "reachable": reachable,
+                # Distinguish a down local Clash API from an individual
+                # server failure; only the former may trigger WAN fallback.
+                "api_unreachable": result.returncode in (7, 28, 52, 56),
+                "checked_at": _timestamp_iso(_utc_now()),
             }
 
         if not profiles:
@@ -2527,6 +2838,15 @@ class VlessControl:
                 self._wan_fallback_runtime_failures = 0
                 runtime = self._runtime_info(store)
                 selection_mode = str(runtime.get("selection_mode") or "").lower()
+                if (
+                    selection_mode not in ("auto", "manual")
+                    and runtime.get("selected_outbound") is None
+                ):
+                    # The local API may be unreachable even while sing-box
+                    # is running. Use the saved selection scope so repeated
+                    # API errors can trigger recovery instead of returning
+                    # selection-unknown indefinitely.
+                    selection_mode = str(selection.get("mode") or "auto").lower()
 
                 if state.get("active"):
                     state["active"] = False
@@ -2619,6 +2939,7 @@ class VlessControl:
         )
         if self._wan_fallback_probe_scope != probe_scope:
             self._wan_fallback_profile_counters = {}
+            self._wan_fallback_control_api_failures = 0
             self._wan_fallback_probe_scope = probe_scope
 
         try:
@@ -2626,8 +2947,45 @@ class VlessControl:
         except Exception as exc:
             return {"action": "probe-failed", "error": str(exc)[:180]}
         if len(results) != len(profiles):
+            self._wan_fallback_control_api_failures = 0
+            return {"action": "probe-incomplete", "active": state.get("active") is True}
+        if any(r["reachable"] is None for r in results):
+            # An unavailable local Clash control plane must not be recorded
+            # as a failure of each VPN server. However, repeatedly losing
+            # *all* local API connections is a runtime failure when Kill
+            # Switch is OFF, so permit the existing WAN recovery policy.
+            all_api_down = all(
+                r.get("reachable") is None and r.get("api_unreachable") is True
+                for r in results
+            )
+            if mode == "vless" and all_api_down:
+                self._wan_fallback_control_api_failures += 1
+                if (
+                    self._wan_fallback_control_api_failures
+                    >= WAN_FALLBACK_FAILURE_THRESHOLD
+                ):
+                    state["active"] = True
+                    state["selection_mode"] = selection_mode
+                    state["fallback_started_at"] = _timestamp_iso(_utc_now())
+                    self._save_wan_fallback_state(state)
+                    try:
+                        self.set_mode("wan", automatic_fallback=True)
+                    except Exception as exc:
+                        state["active"] = False
+                        state["selection_mode"] = None
+                        state["fallback_started_at"] = None
+                        self._save_wan_fallback_state(state)
+                        return {
+                            "action": "fallback-failed",
+                            "error": str(exc)[:180],
+                        }
+                    self._wan_fallback_control_api_failures = 0
+                    return {"action": "fallback-to-wan", "active": True}
+                return {"action": "control-api-unreachable", "active": False}
+            self._wan_fallback_control_api_failures = 0
             return {"action": "probe-incomplete", "active": state.get("active") is True}
 
+        self._wan_fallback_control_api_failures = 0
         counters = self._wan_fallback_profile_counters
         for result in results:
             key = str(result["profile_id"])
@@ -2714,21 +3072,38 @@ class VlessControl:
             raise VlessControlError("Для проверки задержек сначала запустите sing-box.")
         enabled = [p for p in store.get("profiles", []) if p.get("enabled")]
 
-        checked_results = self._probe_profiles(enabled)
+        probes = self._probe_profiles(enabled)
+        checked_results = [r for r in probes if r["reachable"] is not None]
+        with closing(
+            self._availability_connection(self._load_selection_history())
+        ) as db, db:
+            for result in checked_results:
+                self._add_check(
+                    db,
+                    result["profile_id"],
+                    result["checked_at"],
+                    "manual",
+                    result["delay_ms"],
+                )
 
-        checked_at = _timestamp_iso(_utc_now())
-        now = _timestamp_datetime(checked_at) or _utc_now()
+        now = _utc_now()
         history_doc = self._load_delay_history()
         history = history_doc.setdefault("profiles", {})
         for result in checked_results:
             key = str(result["profile_id"])
+            checked_at = result["checked_at"]
             entry = dict(history.get(key) or {})
             if result["reachable"]:
                 if entry.get("first_failed_at"):
                     failed_at = _timestamp_datetime(entry.get("first_failed_at"))
                     if failed_at is not None:
                         entry["last_outage_duration_seconds"] = max(
-                            0, int((now - failed_at).total_seconds())
+                            0,
+                            int(
+                                (
+                                    _timestamp_datetime(checked_at) - failed_at
+                                ).total_seconds()
+                            ),
                         )
                     entry["last_outage_started_at"] = entry.get("first_failed_at")
                     entry["last_recovered_at"] = checked_at
@@ -2748,7 +3123,8 @@ class VlessControl:
             entry["last_checked_at"] = checked_at
             history[key] = entry
 
-        self._save_delay_history(history_doc)
+        if checked_results:
+            self._save_delay_history(history_doc)
         results = [
             self._delay_history_payload(
                 result["profile_id"], history.get(str(result["profile_id"]), {}), now
@@ -2758,7 +3134,8 @@ class VlessControl:
         return {
             "results": results,
             "reachable": sum(1 for item in results if item["reachable"]),
-            "total": len(results),
+            "total": len(probes),
+            "unknown": len(probes) - len(results),
         }
 
     @_serialized
