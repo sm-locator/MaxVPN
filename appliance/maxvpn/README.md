@@ -75,3 +75,25 @@ and certificate, pins connections to public addresses, rejects cross-host
 redirects and limits response size. Production deployment requires CI,
 isolated OpenWrt validation and end-to-end review of the provider's actual
 subscription format.
+
+
+### VLESS profile removal and availability
+
+The appliance dashboard can clear all saved VLESS profiles, including disabled
+profiles. The collection endpoint is `DELETE /api/appliance/v1/vless/profiles`.
+The JSON body requires `confirm: true` and the current `delete_revision` from
+the VLESS state. When LAN uses VLESS, a transition to direct WAN also requires
+`allow_wan: true` and the existing WAN fallback policy. With Kill Switch on,
+select a protected LAN route before clearing the profiles. A successful clear
+stops sing-box, disables its autostart and clears the installed configuration,
+pinned selection, fallback recovery state and per-profile measurement history.
+The existing private profile backup policy applies.
+
+The selection-history API reports per-profile availability from manual BRUME 3
+checks and sing-box URLTest observations in measurement-time order. An open
+outage begins with the first confirmed failure after the latest success.
+When Clash history is empty, the monitor asks the local sing-box delay endpoint
+for confirmation at most once per configured URLTest interval for that tag.
+A failed probe (HTTP 503/504) starts or continues an outage. An unreachable API,
+unknown tag or malformed response supplies no measurement. Existing histories
+contribute their recorded evidence. Gaps in legacy summaries stay unknown.

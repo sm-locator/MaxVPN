@@ -424,8 +424,12 @@ def test_delay_history_persists_outage_age_and_resets_after_recovery(
     def fake_exec(args, timeout=12, check=False, input_text=None):
         value = next(outcomes)
         return SimpleNamespace(
-            returncode=0 if value is not None else 1,
-            stdout=json.dumps({"delay": value}) if value is not None else "",
+            returncode=0,
+            stdout=(
+                json.dumps({"delay": value}) + "\n200"
+                if value is not None
+                else "{}\n503"
+            ),
             stderr="",
         )
 
@@ -710,7 +714,9 @@ def _availability_snapshot(epoch, samples, active_id=1):
     return snapshot
 
 
-def test_urltest_availability_tracks_missing_result_and_recovery_persistently(tmp_path):
+def test_urltest_availability_tracks_confirmed_failure_and_recovery_persistently(
+    tmp_path,
+):
     history_file = tmp_path / "vless-selection-history.json"
     controller = VlessControl(
         profile_file=tmp_path / "profiles.json",
@@ -741,7 +747,11 @@ def test_urltest_availability_tracks_missing_result_and_recovery_persistently(tm
     missing = _availability_snapshot(
         epoch + 180,
         {
-            "vless-profile-1": {"delay_ms": None, "observed_at": None},
+            "vless-profile-1": {
+                "delay_ms": None,
+                "observed_at": stamp(180),
+                "failed": True,
+            },
             "vless-profile-2": {"delay_ms": 175, "observed_at": stamp(180)},
             "vless-profile-3": {"delay_ms": None, "observed_at": None},
         },
@@ -791,7 +801,7 @@ def test_urltest_availability_tracks_missing_result_and_recovery_persistently(tm
     assert persisted["last_outage_duration_seconds"] == 180
 
 
-def test_urltest_availability_seeds_legacy_snapshot_before_detecting_missing_result(
+def test_urltest_availability_seeds_legacy_success_and_ignores_missing_result(
     tmp_path,
 ):
     import json
@@ -836,8 +846,8 @@ def test_urltest_availability_seeds_legacy_snapshot_before_detecting_missing_res
     )
     controller.record_selection_observation(current)
     availability = controller.get_selection_history()["profile_availability"]
-    assert availability["1"]["status"] == "no_result"
-    assert availability["1"]["first_missing_at"] == stamp(15)
+    assert availability["1"]["status"] == "reachable"
+    assert availability["1"]["first_failed_at"] is None
     assert availability["1"]["last_success_delay_ms"] == 180
 
 
@@ -894,9 +904,9 @@ def test_urltest_availability_marks_global_history_reset_as_ambiguous(tmp_path):
         )
     )
     availability = controller.get_selection_history()["profile_availability"]
-    assert availability["1"]["status"] == "unknown"
-    assert availability["2"]["status"] == "unknown"
-    assert availability["1"]["reason"] == "history_reset"
+    assert availability["1"]["status"] == "reachable"
+    assert availability["2"]["status"] == "reachable"
+    assert availability["1"]["last_checked_at"] == stamp(0)
     assert availability["1"]["first_missing_at"] is None
 
 

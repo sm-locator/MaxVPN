@@ -3,21 +3,6 @@ from pathlib import Path
 HTML = Path(__file__).resolve().parents[1] / "index.html"
 
 
-def test_lan_vless_measurement_uses_persistent_urltest_availability():
-    html = HTML.read_text(encoding="utf-8")
-    assert "profile_availability" in html
-    assert "availability?.status==='no_result'" in html
-    assert "Нет успешного измерения" in html
-    assert "Старая ручная проверка" in html
-    assert "if(age!==null&&limit!==null&&age<=limit)" in html
-    assert "source:'manual-stale',delay_ms:null" in html
-    assert (
-        "successful_history_disappeared" not in html
-    )  # backend reason is not a UI hard-code
-    assert "не подтверждает текущее состояние сервера" in html
-    assert "История sing-box могла быть сброшена или перезапущена" in html
-
-
 def test_lan_vless_availability_refresh_repaints_profile_rows():
     html = HTML.read_text(encoding="utf-8")
     assert "if(state.vless)renderVlessProfiles();" in html
