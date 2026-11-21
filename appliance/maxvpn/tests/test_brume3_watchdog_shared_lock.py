@@ -3,11 +3,9 @@
 This script is not installed by CI or by any appliance build step.
 """
 import fcntl
-import os
 from pathlib import Path
 import re
 import subprocess
-import threading
 import time
 
 WATCHDOG = (
