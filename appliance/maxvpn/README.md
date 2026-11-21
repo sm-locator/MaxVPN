@@ -97,3 +97,13 @@ for confirmation at most once per configured URLTest interval for that tag.
 A failed probe (HTTP 503/504) starts or continues an outage. An unreachable API,
 unknown tag or malformed response supplies no measurement. Existing histories
 contribute their recorded evidence. Gaps in legacy summaries stay unknown.
+
+When WAN fallback is explicitly enabled (Kill Switch OFF), two consecutive
+monitor passes where *all* required profile probes fail to connect to the local
+Clash API (curl connection/timeout errors) trigger WAN fallback as a runtime
+control-plane outage. This does not mark each VLESS server as failed. Partial
+API failures or malformed/unknown responses never count towards this failover.
+The profile outage journal remains based only on confirmed probe outcomes.
+During a VLESS-mode bulk delete, an error before committing the empty profile
+store attempts to restore the previous VLESS route; after commit the route is
+never restored using removed profiles.
