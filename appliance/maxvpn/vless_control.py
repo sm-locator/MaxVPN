@@ -46,6 +46,8 @@ WAN_FALLBACK_FAILURE_THRESHOLD = 2
 WAN_FALLBACK_RECOVERY_THRESHOLD = 2
 RUNTIME_LOCK_FILE = ROOT / "run" / "apply.lock"
 WATCHDOG_SCRIPT = Path("/usr/bin/maxvpn-vless-watchdog")
+WATCHDOG_READY_FILE = ROOT / "run" / "watchdog-shared-lock-v1.status"
+PROC_ROOT = Path("/proc")
 WATCHDOG_ROUTING_LOCK_VERSION = "MAXVPN_SHARED_ROUTE_LOCK_V1"
 LOCK = threading.RLock()
 
@@ -1606,7 +1608,7 @@ class VlessControl:
             if not self._watchdog_routing_lock_compatible():
                 raise VlessControlError(
                     "Установленный VLESS watchdog не поддерживает общую "
-                    "блокировку маршрутов. Обновите watchdog перед удалением."
+                    "блокировку маршрутов. Обновите и перезапустите watchdog перед удалением."
                 )
             if store["settings"].get("wan_fallback_enabled") is not True:
                 raise VlessControlError(
@@ -1677,12 +1679,31 @@ class VlessControl:
             return True
         except (OSError, UnicodeError):
             return False
-        return (
+        if not (
             WATCHDOG_ROUTING_LOCK_VERSION in content
             and "/opt/maxvpn-appliance/run/apply.lock" in content
             and 'with_routing_lock "$VLESS_ON"' in content
             and 'with_routing_lock "$SING_BOX_INIT" "$SERVICE_ACTION"' in content
-        )
+        ):
+            return False
+        # A replaced shell file does not replace a process already executing
+        # the old watchdog. A boot/start marker proves that the running shell
+        # started with the lock-aware version, not just that disk was updated.
+        try:
+            parts = WATCHDOG_READY_FILE.read_text(encoding="ascii").split()
+            if len(parts) != 2 or not all(x.isdigit() for x in parts):
+                return False
+            pid, start = parts
+            stat = (PROC_ROOT / pid / "stat").read_text(encoding="ascii")
+            # Parse after the process name in parentheses. starttime is
+            # /proc/PID/stat field 22 (index 19 after the comm field).
+            values = stat.rsplit(")", 1)[1].split()
+            if len(values) <= 19 or values[19] != start:
+                return False
+            args = (PROC_ROOT / pid / "cmdline").read_bytes().split(b"\\0")
+            return b"/usr/bin/maxvpn-vless-watchdog" in args
+        except (OSError, UnicodeError, ValueError, IndexError):
+            return False
 
     def _service_enabled(self):
         if not SERVICE.is_file():
