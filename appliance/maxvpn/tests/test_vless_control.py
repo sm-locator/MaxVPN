@@ -1659,3 +1659,44 @@ def test_kill_switch_keeps_vless_route_when_control_api_is_unreachable(tmp_path)
         }
     assert runtime["mode"] == "vless"
     assert mode_calls == []
+
+
+def test_running_singbox_with_unavailable_selector_api_still_enters_wan_recovery(
+    tmp_path,
+):
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(tmp_path)
+    controller._runtime_info = lambda _: {
+        "selection_mode": "unknown",
+        "selected_outbound": None,
+    }
+    controller._probe_profiles = lambda candidates: [
+        {
+            "profile_id": p["id"],
+            "reachable": None,
+            "delay_ms": None,
+            "api_unreachable": True,
+        }
+        for p in candidates
+    ]
+
+    assert controller.monitor_wan_fallback()["action"] == "control-api-unreachable"
+    assert controller.monitor_wan_fallback() == {
+        "action": "fallback-to-wan", "active": True
+    }
+    assert runtime["mode"] == "wan"
+    assert mode_calls == [("wan", True)]
+
+
+def test_unexpected_running_selector_is_not_mistaken_for_api_outage(tmp_path):
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(tmp_path)
+    controller._runtime_info = lambda _: {
+        "selection_mode": "unknown",
+        "selected_outbound": "unrecognized-outbound",
+    }
+    controller._probe_profiles = lambda _: pytest.fail(
+        "Unexpected selector must not trigger profile-scoped fallback"
+    )
+
+    assert controller.monitor_wan_fallback()["action"] == "selection-unknown"
+    assert runtime["mode"] == "vless"
+    assert mode_calls == []
