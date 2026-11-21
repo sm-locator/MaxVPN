@@ -32,6 +32,7 @@ Baseline SHA256 hashes from the router:
    - sing-box service start/restart;
    - VLESS route repair following service recovery.
    Once the lock is obtained, the watchdog checks that runtime mode is still `vless`; if the LAN is already `wan`, the pending repair is skipped. It releases the fd lock on return.
+   On startup it publishes its PID and Linux start ticks at `/opt/maxvpn-appliance/run/watchdog-shared-lock-v1.status`; the API checks the marker against `/proc/PID/stat` and `/proc/PID/cmdline`. This prevents a disk-only watchdog replacement from authorizing bulk deletion while an old unlocked shell remains running.
 4. Existing `vpn-lan-*` scripts are intentionally **not** rewritten here. They contain no internal flock: making them acquire the lock naively would deadlock when called by Python already holding the lock. Direct external invocations outside the appliance remain an operational concurrency risk and must not occur during maintenance.
 
 ## Rollout gate — no changes permitted until all conditions pass
@@ -40,6 +41,7 @@ Baseline SHA256 hashes from the router:
 - Produce a device-specific minimal patch by comparing live files against exact source SHA256; never overwrite existing router Smart Routing/firewall/DNS/printer configuration with repository defaults.
 - Decide how the missing `vpn-lan-vless-stop` is handled, and test stop/recovery. Do not install a half-compatible stop API.
 - Run isolated OpenWrt/busybox shell tests for `flock -x 9` and `flock -u 9`, including mode change while the watchdog is waiting. Linux CI alone does not establish identical GL-MT5000 behaviour.
+- After the approved coordinated restart, verify that the watchdog start marker matches its **currently running** process. Installing the new file without restarting the service is deliberately rejected by the bulk-delete API.
 - Create a private **complete** backup of the installed `server.py`, `vless_control.py`, `vless_subscription.py`, `index.html`, watchdog, their init scripts, `firewall.user`, route helpers, and VLESS JSON state/config before any replacement. Store with 0700 parent/0600 files, integrity manifest and verified restore procedure; these files contain VPN credentials.
 - Verify that replacement files are syntactically valid with **router Python 3.9** and `sh -n` before any service restart.
 - Roll back all coordinated appliance/watchdog files together upon any functional failure. Rollback must not reset the existing runtime VPN/WAN mode or firewall rules unexpectedly.
