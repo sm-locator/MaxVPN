@@ -75,3 +75,49 @@ and certificate, pins connections to public addresses, rejects cross-host
 redirects and limits response size. Production deployment requires CI,
 isolated OpenWrt validation and end-to-end review of the provider's actual
 subscription format.
+
+
+### VLESS profile removal and availability
+
+The appliance dashboard can clear all saved VLESS profiles, including disabled
+profiles. The collection endpoint is `DELETE /api/appliance/v1/vless/profiles`.
+The JSON body requires `confirm: true` and the current `delete_revision` from
+the VLESS state. When LAN uses VLESS, a transition to direct WAN also requires
+`allow_wan: true` and the existing WAN fallback policy. With Kill Switch on,
+select a protected LAN route before clearing the profiles. A successful clear
+stops sing-box, disables its autostart and clears the installed configuration,
+pinned selection, fallback recovery state and per-profile measurement history.
+The existing private profile backup policy applies.
+
+The selection-history API reports per-profile availability from manual BRUME 3
+checks and sing-box URLTest observations in measurement-time order. An open
+outage begins with the first confirmed failure after the latest success.
+When Clash history is empty, the monitor asks the local sing-box delay endpoint
+for confirmation at most once per configured URLTest interval for that tag.
+A failed probe (HTTP 503/504) starts or continues an outage. An unreachable API,
+unknown tag or malformed response supplies no measurement. Existing histories
+contribute their recorded evidence. Gaps in legacy summaries stay unknown.
+
+When WAN fallback is explicitly enabled (Kill Switch OFF), two consecutive
+monitor passes where *all* required profile probes fail to connect to the local
+Clash API (curl connection/timeout errors) trigger WAN fallback as a runtime
+control-plane outage. This does not mark each VLESS server as failed. Partial
+API failures or malformed/unknown responses never count towards this failover.
+The profile outage journal remains based only on confirmed probe outcomes.
+During a VLESS-mode bulk delete, an error before committing the empty profile
+store attempts to restore the previous VLESS route; after commit the route is
+never restored using removed profiles.
+
+Bulk removal holds the same `/opt/maxvpn-appliance/run/apply.lock` as the
+appliance Smart Routing server across the LAN transition, store commit, and
+rollback. The installed watchdog must also respect this lock: if the legacy
+unlocked `/usr/bin/maxvpn-vless-watchdog` is present, VLESS-mode bulk removal
+is rejected before changing any route or profile. Replacing the watchdog file
+alone is insufficient: the running watchdog must restart and publish its
+PID plus kernel start ticks in `run/watchdog-shared-lock-v1.status`, verified
+against `/proc` by the API. An isolated candidate matching
+the inspected GL-MT5000 watchdog is staged in
+`appliance/maxvpn/compat/brume3-watchdog-locked.sh`. It is **not** installed
+automatically. Follow the device-specific deployment gate at
+`docs/deployments/brume3-vless-bulk-delete-20261121.md`; never blindly replace
+the existing live routing helpers or firewall setup.

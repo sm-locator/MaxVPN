@@ -137,7 +137,6 @@ def test_vless_urltest_measurements_panel_uses_existing_sing_box_snapshot():
     assert "const journal=state.vlessSelectionHistory||{};" in renderer
     assert "const current=journal.current||null;" in renderer
     assert "(state.vless?.profiles||[]).filter(profile=>profile.enabled)" in renderer
-    assert "vlessUrltestSampleState(profile)" in renderer
     assert "vlessProfileMeasurement(profile)" in renderer
     assert "vless-urltest-card-active" in renderer
     assert "state.vless?.running===true" in renderer
@@ -154,12 +153,8 @@ def test_vless_urltest_panel_distinguishes_active_runtime_and_manual_delays():
     renderer = html[start:end]
     assert "state.vless?.running===true" in renderer
     assert "state.vless?.active_outbound||current?.active_outbound||null" in renderer
-    assert "sampleIsManual" in renderer
-    helper_start = html.index("function vlessUrltestSampleState(profile){")
-    helper_end = html.index("function vlessProfileMeasurement(", helper_start)
-    sample_helper = html[helper_start:helper_end]
-    assert "sample.delay_ms===manualSample.delay_ms" in sample_helper
-    assert "Math.abs(sampleEpoch-manualEpoch)<=12000" in sample_helper
+    assert "measurement.display" in renderer
+    assert "measurement.details" in renderer
     assert "URLTest" in renderer
     assert "не пропускная способность" in renderer
     assert "api('/api/appliance/v1/vless/delays'" not in renderer
@@ -383,36 +378,9 @@ def test_vless_active_measurement_refreshes_with_selection_snapshot():
 # MAXVPN-BRUME-OUTAGE-FALLBACK-V1
 
 
-def test_brume_outage_history_is_used_when_urltest_has_no_numeric_delay():
+def test_profile_table_and_cards_render_the_same_measured_outage():
     html = SOURCE_HTML.read_text(encoding="utf-8")
-    start = html.index("function vlessProfileMeasurement(profile){")
-    end = html.index("function renderVlessActiveMeasurement(){", start)
-    helper = html[start:end]
-
-    # Manual outage is a distinct observation for profiles without successful URLTest history.
-    assert "availability?.reason==='no_successful_history'" in helper
-    assert "manualSample?.reachable===false" in helper
-    assert "manualSample?.first_failed_at" in helper
-    assert "const failedAt=manualSample.first_failed_at;" in helper
-    assert "manual-outage" in helper
-    assert "consecutive_failures" in helper
-    assert "formatVlessDuration(seconds)" in helper
-
-    # A newer successful URLTest result must supersede an older manual failure.
-    assert "hasNewerSuccessfulUrltest" in helper
-    assert "sampleEpoch>failedEpoch" in helper
-    assert "if(!hasNewerSuccessfulUrltest)" in helper
-    assert "typeof sample?.delay_ms==='number'" in helper
-
-    # The manual outage branch must precede the generic URLTest fallback.
-    outage_index = helper.index("if(!hasNewerSuccessfulUrltest)")
-    outage_return = helper.index("source:'manual-outage'", outage_index)
-    urltest_return = helper.index("return {source:'urltest',delay_ms:delay")
-    assert outage_index < outage_return < urltest_return
-
-    # Preserve separate handling of manual measurements and stale results.
-    assert "manualSample?.last_checked_at" in helper
-    assert "vlessDelay(profile.id)" in helper
-    assert "vlessDelayDetails(profile.id)" in helper
-    assert "source:'manual-stale'" in helper
-    assert "source:'urltest-monitor'" in helper
+    assert "const measurement=vlessProfileMeasurement(p)" in html
+    assert "const measurement=vlessProfileMeasurement(profile)" in html
+    assert "filter==='failed'&&!measurement.failed" in html
+    assert "filter==='stale'&&!measurement.stale" in html

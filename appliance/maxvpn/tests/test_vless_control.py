@@ -424,8 +424,12 @@ def test_delay_history_persists_outage_age_and_resets_after_recovery(
     def fake_exec(args, timeout=12, check=False, input_text=None):
         value = next(outcomes)
         return SimpleNamespace(
-            returncode=0 if value is not None else 1,
-            stdout=json.dumps({"delay": value}) if value is not None else "",
+            returncode=0,
+            stdout=(
+                json.dumps({"delay": value}) + "\n200"
+                if value is not None
+                else "{}\n503"
+            ),
             stderr="",
         )
 
@@ -710,7 +714,9 @@ def _availability_snapshot(epoch, samples, active_id=1):
     return snapshot
 
 
-def test_urltest_availability_tracks_missing_result_and_recovery_persistently(tmp_path):
+def test_urltest_availability_tracks_confirmed_failure_and_recovery_persistently(
+    tmp_path,
+):
     history_file = tmp_path / "vless-selection-history.json"
     controller = VlessControl(
         profile_file=tmp_path / "profiles.json",
@@ -741,7 +747,11 @@ def test_urltest_availability_tracks_missing_result_and_recovery_persistently(tm
     missing = _availability_snapshot(
         epoch + 180,
         {
-            "vless-profile-1": {"delay_ms": None, "observed_at": None},
+            "vless-profile-1": {
+                "delay_ms": None,
+                "observed_at": stamp(180),
+                "failed": True,
+            },
             "vless-profile-2": {"delay_ms": 175, "observed_at": stamp(180)},
             "vless-profile-3": {"delay_ms": None, "observed_at": None},
         },
@@ -791,7 +801,7 @@ def test_urltest_availability_tracks_missing_result_and_recovery_persistently(tm
     assert persisted["last_outage_duration_seconds"] == 180
 
 
-def test_urltest_availability_seeds_legacy_snapshot_before_detecting_missing_result(
+def test_urltest_availability_seeds_legacy_success_and_ignores_missing_result(
     tmp_path,
 ):
     import json
@@ -836,8 +846,8 @@ def test_urltest_availability_seeds_legacy_snapshot_before_detecting_missing_res
     )
     controller.record_selection_observation(current)
     availability = controller.get_selection_history()["profile_availability"]
-    assert availability["1"]["status"] == "no_result"
-    assert availability["1"]["first_missing_at"] == stamp(15)
+    assert availability["1"]["status"] == "reachable"
+    assert availability["1"]["first_failed_at"] is None
     assert availability["1"]["last_success_delay_ms"] == 180
 
 
@@ -894,9 +904,9 @@ def test_urltest_availability_marks_global_history_reset_as_ambiguous(tmp_path):
         )
     )
     availability = controller.get_selection_history()["profile_availability"]
-    assert availability["1"]["status"] == "unknown"
-    assert availability["2"]["status"] == "unknown"
-    assert availability["1"]["reason"] == "history_reset"
+    assert availability["1"]["status"] == "reachable"
+    assert availability["2"]["status"] == "reachable"
+    assert availability["1"]["last_checked_at"] == stamp(0)
     assert availability["1"]["first_missing_at"] is None
 
 
@@ -1287,9 +1297,10 @@ def test_recovery_starts_sing_box_while_lan_stays_on_wan(tmp_path):
     assert len(profiles) == 2
 
 
-def test_explicit_stop_clears_wan_fallback_marker(tmp_path):
+def test_explicit_stop_clears_wan_fallback_marker(tmp_path, monkeypatch):
     from subprocess import CompletedProcess
 
+    monkeypatch.setattr(vless_control, "RUNTIME_LOCK_FILE", tmp_path / "apply.lock")
     controller, _runtime, _mode_calls, _profiles = _wan_fallback_controller(
         tmp_path, mode="wan", running=False
     )
@@ -1508,3 +1519,234 @@ def test_active_manual_fallback_waits_for_pinned_profile_and_recovers(tmp_path):
     assert second == {"action": "recovered-to-vless", "active": False}
     assert runtime["mode"] == "vless"
     assert mode_calls == [("vless", True)]
+
+
+@pytest.mark.parametrize("error_code", [7, 28, 52, 56])
+def test_local_clash_api_error_is_not_a_profile_failure(tmp_path, error_code):
+    controller, _, _, profiles = _wan_fallback_controller(tmp_path)
+    controller._exec = lambda *_a, **_kw: SimpleNamespace(
+        returncode=error_code, stdout="", stderr=""
+    )
+
+    results = controller._probe_profiles(profiles)
+    assert len(results) == 2
+    assert all(result["reachable"] is None for result in results)
+    assert all(result["api_unreachable"] is True for result in results)
+
+
+@pytest.mark.parametrize(
+    "http_status,body,expected_reachable",
+    [
+        ("404", "{}", None),
+        ("200", "{}", None),
+        ("503", "{}", False),
+        ("504", "{}", False),
+        ("200", '{"delay":37}', True),
+    ],
+)
+def test_clash_response_separates_invalid_sample_from_confirmed_failure(
+    tmp_path, http_status, body, expected_reachable
+):
+    controller, _, _, profiles = _wan_fallback_controller(tmp_path)
+    controller._exec = lambda *_a, **_kw: SimpleNamespace(
+        returncode=0, stdout=body + "\n" + http_status, stderr=""
+    )
+
+    result = controller._probe_profiles(profiles[:1])[0]
+    assert result["reachable"] is expected_reachable
+    assert result["api_unreachable"] is False
+
+
+@pytest.mark.parametrize(
+    "selection",
+    [
+        {"mode": "auto", "profile_id": None},
+        {"mode": "manual", "profile_id": 2},
+    ],
+)
+def test_wan_fallback_on_consecutive_local_api_connection_failures(
+    tmp_path, selection
+):
+    controller, runtime, mode_calls, profiles = _wan_fallback_controller(
+        tmp_path, selection=selection
+    )
+    probed = []
+
+    def unavailable(candidates):
+        probed.append([p["id"] for p in candidates])
+        return [
+            {
+                "profile_id": int(p["id"]),
+                "reachable": None,
+                "delay_ms": None,
+                "api_unreachable": True,
+            }
+            for p in candidates
+        ]
+
+    controller._probe_profiles = unavailable
+    first = controller.monitor_wan_fallback()
+    second = controller.monitor_wan_fallback()
+
+    assert first == {"action": "control-api-unreachable", "active": False}
+    assert second == {"action": "fallback-to-wan", "active": True}
+    assert runtime["mode"] == "wan"
+    assert mode_calls == [("wan", True)]
+    assert probed == ([[1, 2], [1, 2]] if selection["mode"] == "auto" else [[2], [2]])
+    assert controller._load_store()["profiles"] == profiles
+
+
+def test_wan_fallback_does_not_treat_one_failed_api_call_as_global_outage(
+    tmp_path,
+):
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(tmp_path)
+
+    def mixed(candidates):
+        return [
+            {
+                "profile_id": int(p["id"]),
+                "reachable": True if p["id"] == 1 else None,
+                "delay_ms": 32 if p["id"] == 1 else None,
+                "api_unreachable": p["id"] != 1,
+            }
+            for p in candidates
+        ]
+
+    controller._probe_profiles = mixed
+    for _ in range(4):
+        assert controller.monitor_wan_fallback()["action"] == "probe-incomplete"
+    assert runtime["mode"] == "vless"
+    assert mode_calls == []
+
+
+def test_wan_fallback_ignores_malformed_api_data_and_resets_unreachable_streak(
+    tmp_path,
+):
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(tmp_path)
+    phase = {"reason": "api"}
+
+    def probe(candidates):
+        return [
+            {
+                "profile_id": int(p["id"]),
+                "reachable": None,
+                "delay_ms": None,
+                "api_unreachable": phase["reason"] == "api",
+            }
+            for p in candidates
+        ]
+
+    controller._probe_profiles = probe
+    assert controller.monitor_wan_fallback()["action"] == "control-api-unreachable"
+    phase["reason"] = "invalid"
+    for _ in range(3):
+        assert controller.monitor_wan_fallback()["action"] == "probe-incomplete"
+    phase["reason"] = "api"
+    assert controller.monitor_wan_fallback()["action"] == "control-api-unreachable"
+    assert runtime["mode"] == "vless"
+    assert mode_calls == []
+
+
+def test_kill_switch_keeps_vless_route_when_control_api_is_unreachable(tmp_path):
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(
+        tmp_path, enabled=False
+    )
+    controller._probe_profiles = lambda _: pytest.fail(
+        "Kill Switch must not permit WAN probe fallback"
+    )
+    for _ in range(3):
+        assert controller.monitor_wan_fallback() == {
+            "action": "disabled", "active": False
+        }
+    assert runtime["mode"] == "vless"
+    assert mode_calls == []
+
+
+def test_running_singbox_with_unavailable_selector_api_still_enters_wan_recovery(
+    tmp_path,
+):
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(tmp_path)
+    controller._runtime_info = lambda _: {
+        "selection_mode": "unknown",
+        "selected_outbound": None,
+    }
+    controller._probe_profiles = lambda candidates: [
+        {
+            "profile_id": p["id"],
+            "reachable": None,
+            "delay_ms": None,
+            "api_unreachable": True,
+        }
+        for p in candidates
+    ]
+
+    assert controller.monitor_wan_fallback()["action"] == "control-api-unreachable"
+    assert controller.monitor_wan_fallback() == {
+        "action": "fallback-to-wan", "active": True
+    }
+    assert runtime["mode"] == "wan"
+    assert mode_calls == [("wan", True)]
+
+
+def test_unexpected_running_selector_is_not_mistaken_for_api_outage(tmp_path):
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(tmp_path)
+    controller._runtime_info = lambda _: {
+        "selection_mode": "unknown",
+        "selected_outbound": "unrecognized-outbound",
+    }
+    controller._probe_profiles = lambda _: pytest.fail(
+        "Unexpected selector must not trigger profile-scoped fallback"
+    )
+
+    assert controller.monitor_wan_fallback()["action"] == "selection-unknown"
+    assert runtime["mode"] == "vless"
+    assert mode_calls == []
+
+
+def test_stop_rejects_vless_route_before_touching_service_or_fallback(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(vless_control, "RUNTIME_LOCK_FILE", tmp_path / "apply.lock")
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(
+        tmp_path, mode="vless", running=True
+    )
+    controller._save_wan_fallback_state(
+        {
+            "active": True,
+            "selection_mode": "auto",
+            "fallback_started_at": "2026-11-20T00:00:00Z",
+        }
+    )
+    invoked = []
+    controller._exec = lambda *a, **kw: invoked.append(a) or None
+    with pytest.raises(VlessControlError, match="Нельзя остановить sing-box"):
+        controller.stop()
+    assert invoked == []
+    assert runtime["mode"] == "vless"
+    assert mode_calls == []
+    assert controller._load_wan_fallback_state()["active"] is True
+
+
+def test_stop_failure_preserves_wan_fallback_marker(tmp_path, monkeypatch):
+    monkeypatch.setattr(vless_control, "RUNTIME_LOCK_FILE", tmp_path / "apply.lock")
+    controller, runtime, mode_calls, _ = _wan_fallback_controller(
+        tmp_path, mode="wan", running=True
+    )
+    controller._save_wan_fallback_state(
+        {
+            "active": True,
+            "selection_mode": "manual",
+            "fallback_started_at": "2026-11-20T00:00:00Z",
+        }
+    )
+
+    def fail_exec(*args, **kwargs):
+        from subprocess import CompletedProcess
+        return CompletedProcess(args, 1, stdout="", stderr="aborted")
+
+    controller._exec = fail_exec
+    with pytest.raises(VlessControlError, match="Не удалось безопасно остановить"):
+        controller.stop()
+    assert runtime["mode"] == "wan"
+    assert mode_calls == []
+    assert controller._load_wan_fallback_state()["active"] is True

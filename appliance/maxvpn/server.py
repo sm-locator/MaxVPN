@@ -26,7 +26,7 @@ if __package__:
 else:
     from dns_status import collect_dns_status
 
-from vless_control import VlessControl, VlessControlError
+from vless_control import VlessControl, VlessControlError, _selection_timestamp_epoch
 
 VLESS_CONTROL = VlessControl()
 LOG = logging.getLogger("maxvpn-appliance")
@@ -61,7 +61,6 @@ SELECTION_MONITOR_STATE = {
     "last_success_at": None,
     "last_error": None,
 }
-SELECTION_CURRENT_SNAPSHOT = None
 
 ROOT.mkdir(parents=True, exist_ok=True)
 DATA.mkdir(parents=True, exist_ok=True)
@@ -180,22 +179,31 @@ def _selection_timestamp():
 
 
 def _selection_latest_delay(proxy_info):
-    if not isinstance(proxy_info, dict):
+    history = proxy_info.get("history") if isinstance(proxy_info, dict) else None
+    checks = []
+    for item in history if isinstance(history, list) else []:
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get("time"), str)
+            or _selection_timestamp_epoch(item["time"]) is None
+        ):
+            continue
+        delay = item.get("delay")
+        if type(delay) is int and delay >= 0:
+            checks.append(
+                {
+                    "observed_at": item["time"],
+                    "delay_ms": delay or None,
+                    "failed": delay == 0,
+                }
+            )
+    if not checks:
         return {"delay_ms": None, "observed_at": None}
-    history = proxy_info.get("history")
-    if not isinstance(history, list) or not history:
-        return {"delay_ms": None, "observed_at": None}
-    entries = [item for item in history if isinstance(item, dict)]
-    if not entries:
-        return {"delay_ms": None, "observed_at": None}
-    latest = max(entries, key=lambda item: str(item.get("time") or ""))
-    delay = latest.get("delay")
-    if isinstance(delay, bool) or not isinstance(delay, int) or delay <= 0:
-        delay = None
-    observed_at = latest.get("time")
-    if not isinstance(observed_at, str):
-        observed_at = None
-    return {"delay_ms": delay, "observed_at": observed_at}
+    latest = max(
+        checks,
+        key=lambda c: (_selection_timestamp_epoch(c["observed_at"]), not c["failed"]),
+    )
+    return dict(latest, checks=checks)
 
 
 def _selection_urltest_settings():
@@ -293,14 +301,12 @@ def _read_vless_selection_snapshot():
 
 
 def _vless_selection_monitor_loop():
-    global SELECTION_CURRENT_SNAPSHOT
     while True:
         attempted_at = _selection_timestamp()
         with SELECTION_MONITOR_LOCK:
             SELECTION_MONITOR_STATE["last_attempt_at"] = attempted_at
         try:
-            snapshot = _read_vless_selection_snapshot()
-            VLESS_CONTROL.record_selection_observation(snapshot)
+            snapshot = VLESS_CONTROL.poll_selection(_read_vless_selection_snapshot)
         except Exception as exc:
             with SELECTION_MONITOR_LOCK:
                 # The monitor records only a bounded error string, never config contents.
@@ -309,7 +315,6 @@ def _vless_selection_monitor_loop():
                 ]
         else:
             with SELECTION_MONITOR_LOCK:
-                SELECTION_CURRENT_SNAPSHOT = snapshot
                 SELECTION_MONITOR_STATE["last_success_at"] = snapshot["observed_at"]
                 SELECTION_MONITOR_STATE["last_error"] = None
         time.sleep(SELECTION_MONITOR_INTERVAL_SECONDS)
@@ -337,12 +342,7 @@ def _vless_wan_fallback_loop():
 def _vless_selection_history_payload():
     with SELECTION_MONITOR_LOCK:
         monitor = dict(SELECTION_MONITOR_STATE)
-        current = (
-            dict(SELECTION_CURRENT_SNAPSHOT)
-            if isinstance(SELECTION_CURRENT_SNAPSHOT, dict)
-            else None
-        )
-    return VLESS_CONTROL.get_selection_history(monitor=monitor, current=current)
+    return VLESS_CONTROL.get_selection_history(monitor=monitor)
 
 
 def status_runtime():
@@ -2943,6 +2943,18 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         path = urlparse(self.path).path
+        if path == "/api/appliance/v1/vless/profiles":
+            try:
+                return self.send_json(
+                    200, VLESS_CONTROL.delete_all_profiles(self.read_json())
+                )
+            except (ValueError, VlessControlError) as exc:
+                return self.send_error_json(422, str(exc))
+            except Exception:
+                return self.send_error_json(
+                    500,
+                    "Не удалось завершить удаление VLESS. Проверьте состояние сервиса.",
+                )
         vless_match = re.fullmatch(r"/api/appliance/v1/vless/profiles/(\d+)", path)
         if vless_match:
             try:
