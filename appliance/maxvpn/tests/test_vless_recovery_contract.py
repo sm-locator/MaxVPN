@@ -5,6 +5,7 @@ No router access, routing actions or deployments.
 """
 
 import json
+import shutil
 import sqlite3
 import subprocess
 from datetime import datetime, timedelta, timezone
@@ -178,6 +179,10 @@ console.log('BACKEND_UI_RECOVERY_CONTRACT=PASS');
 """
 
 
+@pytest.mark.skipif(
+    shutil.which("node") is None,
+    reason="Node.js unavailable in Python-only appliance test image",
+)
 def test_backend_to_ui_recovery_contract(recovery_states):
     result = subprocess.run(
         [
